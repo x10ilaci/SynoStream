@@ -1,0 +1,102 @@
+name: Build and sign SynoStream 1.54
+
+on:
+  push:
+    tags:
+      - v1.54
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      unsigned-artifact-id: ${{ steps.upload_unsigned.outputs.artifact-id }}
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned build dependencies
+        run: python -m pip install -r requirements.txt -r requirements-build.txt
+
+      - name: Build unsigned release executable
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed `
+            --name SynoStream_1.54 `
+            --icon "assets\synostream.ico" `
+            --add-data "LICENSE;." `
+            --add-data "assets\synostream.ico;assets" `
+            --add-data "assets\mpv\synostream_context.lua;assets\mpv" `
+            "SynoStream_1.54.py"
+
+      - name: Upload unsigned executable for verified signing
+        id: upload_unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          name: SynoStream-1.54-unsigned
+          path: dist/SynoStream_1.54.exe
+          archive: false
+          if-no-files-found: error
+
+  sign:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Check out release source and notices
+        uses: actions/checkout@v4
+
+      - name: Submit executable to SignPath Foundation
+        id: sign
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: synostream
+          signing-policy-slug: release
+          github-artifact-id: ${{ needs.build.outputs.unsigned-artifact-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Assemble signed release files and checksums
+        shell: pwsh
+        run: |
+          $releaseRoot = Join-Path $PWD 'release'
+          $binaryDir = Join-Path $releaseRoot 'SynoStream_1.54_Windows_x64'
+          New-Item -ItemType Directory -Path $binaryDir -Force | Out-Null
+          Copy-Item -LiteralPath 'signed\SynoStream_1.54.exe' -Destination $binaryDir
+          Copy-Item -LiteralPath 'README.md','BINARY_NOTICES.md','LICENSE' -Destination $binaryDir
+          New-Item -ItemType Directory -Path (Join-Path $binaryDir 'assets') -Force | Out-Null
+          Copy-Item -LiteralPath 'assets\synostream.ico' -Destination (Join-Path $binaryDir 'assets')
+          Copy-Item -LiteralPath 'licenses' -Destination $binaryDir -Recurse
+
+          $binaryZip = Join-Path $releaseRoot 'SynoStream_1.54_Windows_x64.zip'
+          Compress-Archive -Path $binaryDir -DestinationPath $binaryZip -CompressionLevel Optimal
+          $sourceZip = Join-Path $releaseRoot 'SynoStream_1.54_Source.zip'
+          git archive --format=zip --prefix='SynoStream_1.54/' HEAD --output=$sourceZip
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create the source archive.' }
+
+          $checksumFile = Join-Path $releaseRoot 'SynoStream_1.54_SHA256.txt'
+          foreach ($path in @((Join-Path $binaryDir 'SynoStream_1.54.exe'), $binaryZip, $sourceZip)) {
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            Add-Content -LiteralPath $checksumFile -Value "$hash  $(Split-Path -Leaf $path)" -Encoding ascii
+          }
+
+      - name: Upload signed release bundle for review
+        uses: actions/upload-artifact@v7
+        with:
+          name: SynoStream-1.54-signed-release
+          path: |
+            release/SynoStream_1.54_Windows_x64/SynoStream_1.54.exe
+            release/SynoStream_1.54_Windows_x64.zip
+            release/SynoStream_1.54_Source.zip
+            release/SynoStream_1.54_SHA256.txt
+          if-no-files-found: error

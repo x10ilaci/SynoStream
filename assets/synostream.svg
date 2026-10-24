@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#41414C"/>
+      <stop offset="1" stop-color="#252630"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C49AFF"/>
+      <stop offset="1" stop-color="#8158C8"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F0EFF5"/>
+      <stop offset="1" stop-color="#B6B6C3"/>
+    </linearGradient>
+  </defs>
+  <rect x="9" y="9" width="238" height="238" rx="58" fill="url(#background)"/>
+  <rect x="10.5" y="10.5" width="235" height="235" rx="56.5" fill="none" stroke="#777681" stroke-opacity=".62" stroke-width="3"/>
+  <path d="M55 74c11-13 24-20 40-22" fill="none" stroke="url(#violet)" stroke-linecap="round" stroke-width="8"/>
+  <rect x="43" y="67" width="170" height="117" rx="19" fill="#20212A" stroke="url(#silver)" stroke-width="8"/>
+  <path d="M111 91c-4-3-9 0-9 5v59c0 5 5 8 9 5l48-30c4-3 4-7 0-10z" fill="url(#violet)"/>
+  <path d="M93 191l13 17h44l13-17" fill="none" stroke="url(#silver)" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <path d="M80 220h96" fill="none" stroke="url(#violet)" stroke-linecap="round" stroke-width="9"/>
+  <circle cx="195" cy="53" r="8" fill="#B991F2"/>
+</svg>
