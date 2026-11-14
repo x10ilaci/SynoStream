@@ -1,5 +1,6 @@
 """Poster-based recommendations; every network operation runs in a worker."""
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from PyQt6.QtCore import Qt, QThread, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices, QPixmap
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -13,16 +14,25 @@ class PosterBatch(QThread):
         super().__init__()
         self.generation, self.items, self.fetch = generation, list(items), fetch
     def run(self):
-        for item in self.items:
-            if self.isInterruptionRequested(): return
+        def fetch(item):
             key = identity(item)
-            if not key: continue
+            if not key or self.isInterruptionRequested(): return key, None
             try: path = self.fetch(item.get('poster_url'), key[1], key[0] == 'movie', self.isInterruptionRequested)
             except Exception: path = None
-            if path and not self.isInterruptionRequested(): self.ready.emit(self.generation, key, str(path))
+            return key, path
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix='recommendation-poster') as executor:
+            futures = [executor.submit(fetch, item) for item in self.items]
+            try:
+                for future in as_completed(futures):
+                    if self.isInterruptionRequested(): return
+                    key, path = future.result()
+                    if path: self.ready.emit(self.generation, key, str(path))
+            finally:
+                for future in futures: future.cancel()
 
 
 class RecommendationsDialog(QDialog):
+    preview_ready = pyqtSignal(object)
     def __init__(self, parent, library_id, name, store, context, request, language,
                  run_worker, task_factory, fetch_poster, placeholder, logo_path, translate=lambda s:s, edit_menu=lambda w:None, prefer_hungarian=False):
         super().__init__(parent)
@@ -34,6 +44,8 @@ class RecommendationsDialog(QDialog):
         self._closing = False; self._worker = None; self._poster_worker = None; self._poster_pending = None
         self._generation = 0; self._poster_labels = {}; self._poster_paths = {}
         self.pool = {}; self.batch = []; self._previous = set(); self._page = 0; self._columns = 0
+        self._preview_keys = ()
+        self.preview_ready.connect(self.preview_loaded)
         self.setWindowTitle(translate('Ajánló') + ' – ' + name)
         self.resize(1040, 780); self.setMinimumSize(740, 560)
         layout = QVBoxLayout(self); layout.setContentsMargins(22, 16, 22, 16)
@@ -84,23 +96,52 @@ class RecommendationsDialog(QDialog):
             self.failed(''); return
         if not context['seeds']: return
         previous = {identity(item) for item in self.batch}
+        self._preview_keys = tuple(identity(item) for item in self.batch)
         self.next_button.setEnabled(False)
         self.status.setText(self.t('Ajánlások frissítése… A korábbi válogatás közben is böngészhető.'))
-        worker = self.task_factory(lambda stop:self.store.load(self.library_id, context['seeds'], context['owned'],
-            self.language, self.request, stop, previous, prefer_hungarian=self.prefer_hungarian))
+        def load(stop):
+            def progress(result):
+                if not self._closing and not stop(): self.preview_ready.emit(result)
+            return self.store.load(self.library_id, context['seeds'], context['owned'],
+                self.language, self.request, stop, previous, prefer_hungarian=self.prefer_hungarian,
+                on_progress=progress if not self.batch else None)
+        worker = self.task_factory(load)
         self._worker = worker
         worker.succeeded.connect(lambda result:self.loaded(result, previous))
         worker.failed.connect(self.failed)
         worker.finished.connect(self.load_finished)
         self.run_worker(worker)
 
+    def preview_loaded(self, result):
+        if self._closing or self.batch: return
+        try:
+            self.pool = result['pool']
+            self.batch = self.store.draw(self.library_id, self.pool, self.context()['owned'], prefer_hungarian=self.prefer_hungarian)
+            if not self.batch: return
+            self._preview_keys = tuple(identity(item) for item in self.batch)
+            self.store.mark_seen(self.library_id, self.batch)
+            self.render()
+        except Exception:
+            pass  # The complete result/error still arrives through the worker.
+
     def loaded(self, result, previous):
         if self._closing: return
         try:
             self.pool = result['pool']
             owned = self.context()['owned']
-            self.batch = self.store.draw(self.library_id, self.pool, owned, previous, prefer_hungarian=self.prefer_hungarian)
-            self.store.mark_seen(self.library_id, self.batch)
+            if self._preview_keys:
+                feedback = self.store.feedback(self.library_id)
+                kept = [self.pool[key] for key in self._preview_keys if key in self.pool and key not in owned and key not in feedback]
+                kept_keys = {identity(item) for item in kept}
+                additions = self.store.draw(self.library_id, self.pool, owned | kept_keys, previous,
+                    limit=max(0, BATCH_SIZE - len(kept)), prefer_hungarian=self.prefer_hungarian)
+                self.batch = kept + additions
+                self.store.mark_seen(self.library_id, additions)
+                if self.prefer_hungarian: self.batch.sort(key=lambda item:item.get('has_hu_metadata') is not True)
+                self._preview_keys = ()
+            else:
+                self.batch = self.store.draw(self.library_id, self.pool, owned, previous, prefer_hungarian=self.prefer_hungarian)
+                self.store.mark_seen(self.library_id, self.batch)
             self.status.setText(self.t('Ajánlások alapjául szolgáló műsorok: {count}.').format(count=result['seed_count']))
             if result['errors']:
                 self.status.setText(self.t('A TMDB-frissítés egy része nem sikerült. A mentett ajánlások továbbra is böngészhetők.'))
@@ -119,7 +160,17 @@ class RecommendationsDialog(QDialog):
         if not self._closing: self.next_button.setEnabled(True)
 
     def next_batch(self):
-        if self.tabs.currentIndex() == 0: self.load()
+        if self.tabs.currentIndex() == 0:
+            if self._worker is not None: return
+            try:
+                owned = self.context()['owned']
+                previous = {identity(item) for item in self.batch}
+                self.batch = self.store.draw(self.library_id, self.pool, owned, previous, prefer_hungarian=self.prefer_hungarian)
+                if self.batch: self.store.mark_seen(self.library_id, self.batch)
+                self.render()
+            except Exception:
+                self.failed(''); return
+            self.load()
         else: self._page += 1; self.render()
 
     def switch_tab(self, index):
@@ -154,8 +205,11 @@ class RecommendationsDialog(QDialog):
         try: items = self.visible_items()
         except Exception:
             self.status.setText(self.t('Az ajánló helyi adatainak betöltése nem sikerült.')); return
-        self._visible_keys = tuple(identity(item) for item in items)
-        self._generation += 1; self._poster_labels = {}
+        keys = tuple(identity(item) for item in items)
+        changed = set(keys) != set(getattr(self, '_visible_keys', ()))
+        self._visible_keys = keys
+        if changed: self._generation += 1
+        self._poster_labels = {}
         while self.grid.count():
             entry = self.grid.takeAt(0)
             if entry.widget(): entry.widget().deleteLater()
@@ -166,9 +220,11 @@ class RecommendationsDialog(QDialog):
         for index, item in enumerate(items):
             self.grid.addWidget(self.make_card(item), index // self._columns, index % self._columns)
         self.scroll.verticalScrollBar().setValue(0)
-        self._poster_pending = (self._generation, items)
-        if self._poster_worker is not None: self._poster_worker.requestInterruption()
-        else: self.start_posters()
+        if changed or self._poster_worker is None:
+            missing = [item for item in items if not os.path.isfile(self._poster_paths.get(identity(item), ''))]
+            self._poster_pending = (self._generation, missing) if missing else None
+            if self._poster_worker is not None: self._poster_worker.requestInterruption()
+            else: self.start_posters()
 
     def make_card(self, item):
         card = QWidget(); card.setObjectName('RecommendationCard'); card.setFixedWidth(210)

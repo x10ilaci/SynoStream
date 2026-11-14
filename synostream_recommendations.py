@@ -1,5 +1,6 @@
 """Per-library TMDB recommendations, local feedback and rotating discovery batches."""
 import contextlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import math
 import random
@@ -11,6 +12,28 @@ CACHE_TTL = 7 * 86400
 MAX_REQUESTS = 4
 MAX_LOCALIZATION_REQUESTS = 8
 BATCH_SIZE = 12
+NETWORK_WORKERS = 4
+
+
+def parallel_requests(entries, operation, stop, executor=None):
+    """Bounded network parallelism; SQLite writes remain on the caller thread."""
+    if stop(): raise InterruptedError()
+    manager = contextlib.nullcontext(executor) if executor is not None else ThreadPoolExecutor(max_workers=NETWORK_WORKERS, thread_name_prefix='recommendation')
+    with manager as executor:
+        def run(entry):
+            if stop(): raise InterruptedError()
+            value = operation(entry)
+            if stop(): raise InterruptedError()
+            return value
+        futures = {executor.submit(run, entry):entry for entry in entries}
+        try:
+            for future in as_completed(futures):
+                if stop(): raise InterruptedError()
+                try: yield futures[future], future.result(), None
+                except InterruptedError: raise
+                except Exception as error: yield futures[future], None, error
+        finally:
+            for future in futures: future.cancel()
 
 
 def init_tables(conn):
@@ -155,18 +178,28 @@ class RecommendationStore:
         self.apply_localization(result, language)
         return result, ages
 
-    def localization(self):
+    def localization(self, keys=None):
         with self.connection() as conn:
             result = {}
-            for kind, media_id, has_overview, payload, checked in conn.execute(
-                    "SELECT media_type,tmdb_id,has_overview,payload,checked_at FROM recommendation_localization WHERE language='hu'"):
+            query = "SELECT media_type,tmdb_id,has_overview,payload,checked_at FROM recommendation_localization WHERE language='hu'"
+            if keys is None:
+                rows = conn.execute(query)
+            else:
+                selected = list(keys)
+                rows = []
+                for offset in range(0, len(selected), 400):
+                    chunk = selected[offset:offset + 400]
+                    placeholders = ','.join('(?,?)' for _ in chunk)
+                    rows.extend(conn.execute(query + ' AND (media_type,tmdb_id) IN (' + placeholders + ')',
+                                             [part for key in chunk for part in key]).fetchall())
+            for kind, media_id, has_overview, payload, checked in rows:
                 try: data = json.loads(payload)
                 except (TypeError, ValueError): continue
                 if isinstance(data, dict): result[(kind, media_id)] = (bool(has_overview), data, checked)
             return result
 
     def apply_localization(self, pool, language):
-        known = self.localization()
+        known = self.localization(pool)
         for key, item in pool.items():
             entry = known.get(key)
             # Unknown is not the same as a confirmed missing translation.
@@ -178,7 +211,7 @@ class RecommendationStore:
                 if isinstance(overview, str) and overview.strip(): item['overview'] = overview[:12000]
 
     def check_hungarian(self, library_id, pool, owned, request, stop, previous=()):
-        known = self.localization()
+        known = self.localization(pool)
         feedback = self.feedback(library_id)
         previous = set(previous)
         pending = [key for key in pool if key not in owned and key not in feedback
@@ -186,34 +219,43 @@ class RecommendationStore:
         random.SystemRandom().shuffle(pending)
         pending.sort(key=lambda key:(key in previous, -float(pool[key].get('score') or 0)))
         requests = errors = 0
-        for key in pending[:MAX_LOCALIZATION_REQUESTS]:
-            if stop(): raise InterruptedError()
-            requests += 1
-            try:
-                response = request(f'{key[0]}/{key[1]}/translations', {})
-                if stop(): raise InterruptedError()
-                translations = response.get('translations') if isinstance(response, dict) else ([] if response is None else None)
-                if not isinstance(translations, list): raise ValueError('Hibás TMDB-fordítási válasz.')
-                localized = []
-                for translation in translations:
-                    if not isinstance(translation, dict) or translation.get('iso_639_1') != 'hu': continue
-                    data = translation.get('data')
-                    if isinstance(data, dict) and isinstance(data.get('overview'), str) and data['overview'].strip():
-                        localized.append(translation)
-                localized.sort(key=lambda t:t.get('iso_3166_1') != 'HU')
-                data = localized[0]['data'] if localized else {}
-                title = data.get('title' if key[0] == 'movie' else 'name')
-                payload = dict(title=title if isinstance(title, str) else '', overview=data.get('overview') or '')
-                with self.connection() as conn, conn:
-                    conn.execute('INSERT OR REPLACE INTO recommendation_localization VALUES (?,?,?,?,?,?)',
-                                 (*key, 'hu', int(bool(localized)), json.dumps(payload, ensure_ascii=False), time.time()))
-            except InterruptedError: raise
-            except sqlite3.Error: raise
-            except Exception:
-                # A timeout/authentication error is not evidence of missing Hungarian data.
-                errors += 1
-                break
+        # A failed wave does not trigger further translation calls. Existing
+        # request budgets and the distinction between unknown/missing remain.
+        selected = pending[:MAX_LOCALIZATION_REQUESTS]
+        with ThreadPoolExecutor(max_workers=NETWORK_WORKERS, thread_name_prefix='recommendation-hu') as executor:
+            for offset in range(0, len(selected), NETWORK_WORKERS):
+                wave = selected[offset:offset + NETWORK_WORKERS]
+                requests += len(wave)
+                wave_errors = 0
+                for key, response, error in parallel_requests(wave,
+                        lambda key:request(f'{key[0]}/{key[1]}/translations', {}), stop, executor):
+                    if error is not None:
+                        errors += 1; wave_errors += 1; continue
+                    if stop(): raise InterruptedError()
+                    try:
+                        self._save_translation(key, response)
+                    except sqlite3.Error: raise
+                    except Exception:
+                        errors += 1; wave_errors += 1
+                if wave_errors: break
         return requests, errors
+
+    def _save_translation(self, key, response):
+        translations = response.get('translations') if isinstance(response, dict) else ([] if response is None else None)
+        if not isinstance(translations, list): raise ValueError('Hibás TMDB-fordítási válasz.')
+        localized = []
+        for translation in translations:
+            if not isinstance(translation, dict) or translation.get('iso_639_1') != 'hu': continue
+            data = translation.get('data')
+            if isinstance(data, dict) and isinstance(data.get('overview'), str) and data['overview'].strip():
+                localized.append(translation)
+        localized.sort(key=lambda t:t.get('iso_3166_1') != 'HU')
+        data = localized[0]['data'] if localized else {}
+        title = data.get('title' if key[0] == 'movie' else 'name')
+        payload = dict(title=title if isinstance(title, str) else '', overview=data.get('overview') or '')
+        with self.connection() as conn, conn:
+            conn.execute('INSERT OR REPLACE INTO recommendation_localization VALUES (?,?,?,?,?,?)',
+                         (*key, 'hu', int(bool(localized)), json.dumps(payload, ensure_ascii=False), time.time()))
 
     def draw(self, library_id, pool, owned, previous=(), limit=BATCH_SIZE, rng=None, prefer_hungarian=False):
         feedback = self.feedback(library_id)
@@ -237,7 +279,7 @@ class RecommendationStore:
         if prefer_hungarian: selected.sort(key=lambda item:item.get('has_hu_metadata') is not True)
         return selected
 
-    def load(self, library_id, seeds, owned, language, request, stop=lambda:False, previous=(), prefer_hungarian=False):
+    def load(self, library_id, seeds, owned, language, request, stop=lambda:False, previous=(), prefer_hungarian=False, on_progress=None):
         """At most four seed requests plus bounded optional language checks; reuse cached results."""
         seeds = seed_items(seeds)
         if not seeds: return dict(items=[], pool={}, seed_count=0, errors=0, requests=0)
@@ -249,24 +291,31 @@ class RecommendationStore:
         pending = [seed for seed in seeds if now - ages.get(identity(seed), 0) >= CACHE_TTL]
         random.SystemRandom().shuffle(pending)
         pending.sort(key=lambda seed:ages.get(identity(seed), 0))
-        errors = requests = 0
-        for seed in pending[:MAX_REQUESTS]:
+        selected = pending[:MAX_REQUESTS]
+        errors = 0; requests = len(selected); preview_sent = False
+        def fetch(seed):
+            kind, media_id = identity(seed)
+            return request(f'{kind}/{media_id}/recommendations', {'language':language, 'page':1})
+        for seed, response, error in parallel_requests(selected, fetch, stop):
+            if error is not None:
+                errors += 1; continue
             if stop(): raise InterruptedError()
             kind, media_id = identity(seed)
-            requests += 1
             try:
-                response = request(f'{kind}/{media_id}/recommendations', {'language':language, 'page':1})
-                if stop(): raise InterruptedError()
-                # A disappeared seed is an empty list, not a transient network error.
                 raw = response.get('results') if isinstance(response, dict) else ([] if response is None else None)
                 if not isinstance(raw, list): raise ValueError('Hibás TMDB-ajánlói válasz.')
                 results = [normalized for item in raw[:60] if (normalized := normalize_result(item, kind))]
-                with self.connection() as conn, conn:
-                    conn.execute('INSERT OR REPLACE INTO recommendation_cache VALUES (?,?,?,?,?,?)',
-                                 (library_id, kind, media_id, language, json.dumps(results, ensure_ascii=False), now))
-            except InterruptedError: raise
-            except sqlite3.Error: raise
-            except Exception: errors += 1
+            except (ValueError, TypeError):
+                errors += 1; continue
+            with self.connection() as conn, conn:
+                conn.execute('INSERT OR REPLACE INTO recommendation_cache VALUES (?,?,?,?,?,?)',
+                             (library_id, kind, media_id, language, json.dumps(results, ensure_ascii=False), now))
+            if on_progress is not None and not preview_sent:
+                preview_pool, preview_ages = self.pool(library_id, seeds, language)
+                if any(key not in owned and key not in feedback for key in preview_pool):
+                    if stop(): raise InterruptedError()
+                    on_progress(dict(pool=preview_pool, seed_count=len(preview_ages), errors=errors))
+                    preview_sent = True
         if stop(): raise InterruptedError()
         pool, ages = self.pool(library_id, seeds, language)
         localization_requests = 0
