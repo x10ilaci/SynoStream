@@ -40,6 +40,7 @@ jobs:
           path: ${{ runner.temp }}/SynoStream-release/*
           if-no-files-found: error
       - name: Prepare GitHub draft release
+        if: github.ref_type == 'tag'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python publish_release.py --directory "${{ runner.temp }}/SynoStream-release"
