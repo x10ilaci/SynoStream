@@ -1,6 +1,6 @@
 # Code signing policy
 
-The current Windows 1.95 release is **unsigned**. Its SHA256 checksums and update-manifest hashes verify file integrity; they do not constitute Authenticode signing.
+The current Windows 1.96 release is **unsigned**. Its SHA256 checksums and update-manifest hashes verify file integrity; they do not constitute Authenticode signing.
 
 The earlier `.github/workflows/signpath-release.yml` is a preparatory workflow for version 1.54. Its presence does not mean that a signing certificate has been activated or that current releases are signed. No SignPath account, approval, token or certificate is required by the current build/update workflow.
 
