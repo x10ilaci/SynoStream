@@ -1,4 +1,4 @@
-# SynoStream 1.97
+# SynoStream 1.99
 
 Nyilvános, forráskódú Windows-alkalmazás helyi és Synology NAS-on tárolt filmek és TV-műsorok böngészéséhez és lejátszásához.
 
@@ -20,7 +20,7 @@ Egy régi adatbázis első 1.46-os vagy újabb megnyitásakor a program a meglé
 
 ## EXE használata
 
-A Windows x64 futtatható változat a `SynoStream_1.97_Windows_x64.zip` csomagban található. Csomagold ki az egészet egy olyan mappába, amelybe a Windows-felhasználód írhat, majd indítsd el a `SynoStream_1.97.exe` fájlt. Az EXE mellől ne töröld a `BINARY_NOTICES.md` fájlt.
+A Windows x64 futtatható változat a `SynoStream_1.99_Windows_x64.zip` csomagban található. Csomagold ki az egészet egy olyan mappába, amelybe a Windows-felhasználód írhat, majd indítsd el a `SynoStream_1.99.exe` fájlt. Az EXE mellől ne töröld a `BINARY_NOTICES.md` fájlt.
 
 Az alkalmazás beállításai, adatbázisa, MPV-je és plakátgyorsítótára alapból a `%LOCALAPPDATA%\SynoStream\data` mappában maradnak, ezért az EXE cseréje nem érinti őket. Hordozható használathoz indítás előtt hozz létre egy üres `portable.flag` fájlt az EXE mellett. Ha az új adatmappa még nem létezik, a program az EXE melletti régi adatokat átmásolja; az eredetit megtartja. Az átvételhez az új EXE-t a régi adatok mellé tedd. Már létező új adatmappát nem ír felül. Másik helyen lévő telepítésnél használd a beépített mentés-visszaállítást. A TMDB-adatokhoz és az MPV első letöltéséhez internetkapcsolat szükséges.
 
@@ -30,7 +30,7 @@ A forráscsomag teljes tartalmát tartsd együtt, az összes synostream_*.py mod
 
 ```powershell
 py -m pip install -r requirements.txt
-py SynoStream_1.97.py
+py SynoStream_1.99.py
 ```
 
 Az első indítás után a Beállításokban add meg a TMDB API-kulcsot, majd állítsd be a helyi médiamappákat vagy a távoli NAS-kapcsolatot. Az MPV-t a program szükség esetén első lejátszáskor tölti le.
@@ -54,7 +54,7 @@ A kézi ellenőrzés lépéseit a [TESTING.md](TESTING.md) tartalmazza.
 
 A SynoStream licencelése **GNU GPL-3.0-only**. A teljes licenc a [LICENSE](LICENSE) fájlban található; az alkalmazás Névjegy részében is megnyitható. A forrásfüggőségekről a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), az EXE-ben csomagolt összetevőkről a [BINARY_NOTICES.md](BINARY_NOTICES.md) ad tájékoztatást.
 
-## Újdonságok az 1.97-ban
+## Újdonságok az 1.99-ban
 
 - Az induláskori konfiguráció-visszaírás és a kézi beállításmentés egyedi ideiglenes fájlt, teljes kiírást és atomikus cserét használ. Részleges írás vagy sikertelen csere esetén az előző konfiguráció megmarad. Változatlan beállításokat az indulás nem ír újra.
 - A saját torrentoldalak bekerültek a beállítási sémába. A név és webcím újraindítás után is megmarad. A szándékosan üres oldallista is megmarad; a régi, oldallista nélküli konfiguráció az nCore alapgombját kapja.
@@ -150,7 +150,7 @@ A létrehozó/törlő/szüneteltető műveleteket bizonytalan hálózati válasz
 
 ## Kiadási előzmények
 
-- **1.97 (2026-11-11):** Download Station kezelőoldal, torrent- és magnet-hozzáadás, NAS-célmappák, feladatműveletek és kész letöltések médiatár-frissítése.
+- **1.99 (2026-11-11):** Download Station kezelőoldal, torrent- és magnet-hozzáadás, NAS-célmappák, feladatműveletek és kész letöltések médiatár-frissítése.
 
 - **1.58 (2026-11-11):** Plakátnézet, képi és állapotgyorsítótár, kártya-újrahasznosítás, külön rendezési/szűrési/elhelyezési lépés, adagolt felületi frissítés.
 - **1.57 (2026-11-11):** A teljes kezdőlap eltávolítása.
@@ -197,7 +197,7 @@ A létrehozó/törlő/szüneteltető műveleteket bizonytalan hálózati válasz
 
 
 
-## NFO-alapú felismerés (1.97)
+## NFO-alapú felismerés (1.99)
 
 A korábban azonosítatlan vagy új műsoroknál a program helyi és NAS-mappákban is megvizsgálja a kapcsolódó NFO-fájlt. Felhasználható adat: IMDb-azonosító (`tt0133093` vagy IMDb-hivatkozás), TMDB-azonosító/hivatkozás, Kodi XML `<title>`, `<originaltitle>`, `<year>`, `<uniqueid>` mezők, illetve szöveges `Title:`, `Original title:`, `Cím:` és `Year:` mezők. Az IMDb-feloldás és a borítók/leírások lekérése továbbra is a beállított TMDB-kulcsot használja.
 
@@ -208,7 +208,7 @@ A kézi párosítás és a meglévő sikeres azonosítás megmarad. A korábban 
 A torrentfájl-választóban az NFO továbbra sincs alapból kijelölve. Ha szeretnéd felhasználni a felismeréshez, a hozzáadáskor az NFO letöltését is jelöld be.
 
 
-## Filmfelismerés mappanévből (1.97)
+## Filmfelismerés mappanévből (1.99)
 
 Egyetlen főfilmet tartalmazó, címmel és évszámmal nevezett kiadási mappában a teljes mappanév pontosítja a rövidített fájlnevet. Például a `Kubo.and.the.Two.Strings.2016.../kubo-720p-hyperx.mkv` fájlhoz a `Kubo and the Two Strings` cím és a 2016-os év, a `Lady.and.the.Tramp.1955.../latt.720p-trinity.mkv` fájlhoz a `Lady and the Tramp` cím és az 1955-ös év lesz a keresési támpont. A sample-videó nem számít külön főfilmnek.
 
@@ -217,7 +217,7 @@ A film évszámától több mint egy évvel eltérő találat nem fogadható el,
 Az ilyen mappák korábbi automatikus találatait frissítéskor újraellenőrzi. A kézi párosítások és az NFO-azonosítók elsőbbsége megmarad. Telepítés után frissítsd az érintett médiatárat; kézi adatbázis- vagy gyorsítótár-törlés nem szükséges.
 
 
-## Hordozható kézi párosítások (1.97)
+## Hordozható kézi párosítások (1.99)
 
 A kiválasztott médiatármappa gyökerében, a `.synostream/parositasok` alkönyvtárban tárolja a kézi párosítások hordozható változatát. Egy módosítás egy saját, egyedi nevű JSON-fájlt kap. A médiatárban közvetlenül elhelyezett filmfájlokat is támogatja. A film/torrent saját könyvtárába nem tesz új fájlt, ha a beállított médiatárgyökér azon kívül van.
 
@@ -225,7 +225,7 @@ Használat:
 
 1. A meglévő gépen indíts médiatár-frissítést, vagy a Beállítások / Hordozható médiapárosítások résznél kattints a Párosítások szinkronizálása gombra. A korábbi kézi párosítások is kikerülnek a közös mappába.
 2. Ellenőrizd az állapotjelzésben, hogy nincs mentésre váró vagy sikertelen művelet. A helyi párosítás hiba esetén is megmarad, a következő frissítés újrapróbálja a közös mentést.
-3. A másik gépen is legalább 1.97-es SynoStreamet használj, és ugyanazt a fizikai médiatárgyökeret válaszd ki. Az elérési út lehet más meghajtóbetű vagy másik gép saját NAS-elérése; a közös bejegyzések relatívak. Más könyvtárszint kiválasztásakor a relatív útvonalak eltérnek.
+3. A másik gépen is legalább 1.99-es SynoStreamet használj, és ugyanazt a fizikai médiatárgyökeret válaszd ki. Az elérési út lehet más meghajtóbetű vagy másik gép saját NAS-elérése; a közös bejegyzések relatívak. Más könyvtárszint kiválasztásakor a relatív útvonalak eltérnek.
 4. Frissítsd a médiatárat. A közös párosításokat az automatikus keresés előtt átveszi, és a saját TMDB-kulcsoddal betölti a médiainformációkat.
 
 Az új és a visszavont kézi párosításokat is továbbadja. A két gép különböző műsorokra vonatkozó módosításai együtt megmaradnak. Ugyanazon műsor egyidejű, eltérő párosítását determinisztikus verziós sorrend oldja fel; szükség esetén a szinkronizálás után ismét válaszd ki a kívánt párosítást. Az előzményfájlokat ne szerkeszd kézzel.
@@ -235,7 +235,7 @@ A közös mappa nem tartalmaz beállításokat, jelszót, NAS-felhasználónevet
 A NAS-on az első gépnek írási joga kell a médiatárgyökérhez, a másik gépnek legalább olvasási joga. Az üres médiatárba nem hoz létre közös fájlokat addig, amíg nincs hordozható párosítás. A szinkronizáláskor hiányzó közös fájlokat a helyben ismert előzményekből újra ki tudja menteni.
 
 
-## Magyar főcím és javított szinkronizálás (1.97)
+## Magyar főcím és javított szinkronizálás (1.99)
 
 A felismeréshez az eredeti cím, mappanév és NFO-azonosító is használható, de a megjelenített adatokhoz a megtalált TMDB-adatlapot a beállított nyelven kéri le. Magyar nyelvű használatnál a magyar cím/név és magyar leírás az elsődleges. Hiányzó magyar leírásnál angol leírást is megjeleníthet, de emiatt a magyar főcímet nem cseréli angolra. Ha a TMDB nem tartalmaz magyar címet, az elérhető cím marad; a program nem készít saját fordítást.
 
@@ -243,7 +243,7 @@ A régebbi, eredeti címmel tárolt találatokat médiatár-frissítéssel lehet
 
 A közös párosítások frissítése már a gyökérben lévő junction almappák logikai útvonalát kezeli. A film típusú médiatárban sorozatként felismert elem is közvetlenül exportálható. A Beállítások / Párosítások szinkronizálása művelet meglévő közös rekordokra is tartalomellenőrzést végez; az egyértelműen sérült rekordot ismert érvényes helyi példányból helyreállítja. Ha egy rekord továbbra is érvényes JSON, de ugyanazon azonosítóval eltérő adatot tartalmaz, ezt ütközésként jelzi és megőrzi a változatot.
 
-## Médiatárankénti ajánló (1.97)
+## Médiatárankénti ajánló (1.99)
 
 Minden médiatár felső sávjában az Ajánló gomb nyitja a saját válogatását. A Fedezz fel fülön az Új válogatás másik adagot kér; az Érdekel fül őrzi a mentett címeket. A Nem érdekel művelet az adott médiatárban rejti el a címet, az Elrejtve fülön visszaállítható. A már meglévő címek az összes beállított médiatár alapján kizárásra kerülnek. A kizárás a felismert TMDB-azonosítókon alapul; egy még azonosítatlan fájl tartalma ebből nem állapítható meg.
 
@@ -251,13 +251,13 @@ Az ajánló a meglévő TMDB API-kulcsot használja, külső LLM nélkül. Az ad
 
 Az ajánlások forrása a TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. A TMDB API nem üzleti célú használatának feltételeit lásd: https://developer.themoviedb.org/docs/faq
 
-## Magyar adatlapok előnyben (1.97)
+## Magyar adatlapok előnyben (1.99)
 
 A Beállítások → Ajánló csoportban kapcsolható. Alapértelmezetten bekapcsolt; a módosítást a Beállítások mentése gombbal lehet menteni. Magyar leírással igazolt címek nagyobb eséllyel kerülnek a következő válogatásba, és a kiválasztott adagon belül előrébb láthatók. A többi cím nem kerül kizárásra, a válogatás továbbra is változik.
 
 A magyar adatlap nem bizonyít magyar szinkront. A jelölés alapja a TMDB magyar fordításának nem üres leírása; az eredetivel azonos cím nem hátrány. Az ellenőrzés válogatásonként legfeljebb nyolc extra TMDB-kérést jelent, helyi hétnapos gyorsítótárral. Kikapcsolva nincs ilyen extra lekérés. Hálózati hiba vagy megszakítás esetén a hiányzó bizonyíték nem válik negatív minősítéssé.
 
-## Windows-ikonok (1.97)
+## Windows-ikonok (1.99)
 
 A program verziófüggetlen Windows-alkalmazásazonosítót használ. Az ikon képi adatait memóriában tartja, a natív ablakikonokat ablaknyitás és állapotváltás után, továbbá öt másodpercenként ellenőrzi. Az ellenőrzés csak eltérés esetén állítja vissza az ikont; az ablak méretét és kicsinyített vagy nagyított állapotát nem változtatja meg.
 
@@ -284,3 +284,15 @@ A kiadás közzététele előtt ellenőrzi a csomagok fájlneveit, tartalmát é
 A TMDB-ajánlások és a magyar fordítási adatok ellenőrzése legfeljebb négy párhuzamos kéréssel fut, a korábbi összesített kérési keret megtartásával. Az első használható találatok korán megjelennek; a felület nem vár a teljes ajánlói és fordítási sorozat végére. A mentett készletből az Új válogatás azonnal választ, miközben a háttérben frissül a készlet. A már megjelenített kártyák a frissítéskor megmaradnak, és csak a szükséges adataik frissülnek.
 
 A borítók négyes párhuzamos letöltést használnak. Az azonos kártyák átrendezése és adatfrissítése nem indítja újra a még futó képbetöltést. A magyar nyelvi gyorsítótárból az aktuális találati készlet adatait olvassa ki. A megnézett előzmény nem számolja kétszer ugyanazt a korán és véglegesen megjelenített válogatást.
+
+## Egyszerűbb frissítés és forrásösszerendelés (1.98, helyi kiadás)
+
+A frissítési ablak Frissítés és újraindítás gombja letöltést, ellenőrzést, telepítést és újraindítást végez; a Később gomb megszakítja vagy elhalasztja a műveletet. Az 1.99-es kiadás a GitHub Releases oldalon is elérhető.
+
+Ha ugyanaz a NAS-mappa és helyi hálózati elérése eddig külön forrássorként szerepelt, a Forrásmappák ablak Mentés művelete az egyező megosztás/almappa útvonalaknál rákérdez az összerendelésre. Csak akkor válassz Igent, ha valóban ugyanannak a mappának két eléréséről van szó. Ekkor a kártyák egy példányban jelennek meg, a kézi párosítások és lejátszási állapot megőrzésével. Két különböző kézi párosítás ütközésekor a program megállítja a mentést, és nem választ helyetted.
+
+Összerendelt forrásnál az elérhető helyi SMB-fájlt részesíti előnyben. Az induláskor frissen ellenőrzi az elérést. Hiányzó vagy elérhetetlen helyi fájlnál továbbra is használható a NAS / QuickConnect kapcsolat; a csak QuickConnecttel elérhető USB-források támogatása megmarad. A tényleges útvonalválasztás kategóriája lejátszás közben az állapotsávon látható.
+
+## Forrásmappák mentése háttérművelet közben (1.99)
+
+A szerkesztő megőrzi a jóváhagyott összevonást. Ha egy korábban indult beolvasás, párosításszinkron, kézi párosítás vagy lejátszás még foglalja az adatokat, megvárja annak végét, majd automatikusan ment. A szerkesztő megnyitása alatt új beolvasás és párosításszinkron nem indul; az elhalasztott frissítés az ablak bezárása után folytatódik. A Mégse megszakítja a várakozást, így bezárás után nincs későbbi háttérmentés. Aktív lejátszásnál előbb zárd be az MPV-t.

@@ -45,6 +45,7 @@ class UpdateController(QObject):
         self.window = window; self.version = version; self.config = config; self.save = save
         self.run_worker = run_worker; self.data_dir = data_dir; self.language = language
         self.worker = None; self.manifest = None; self.staged = None; self.dialog = None
+        self._update_requested = False
         self.check_button = None; self.installing = False
 
     def tr(self, hu, en): return en if self.language() == 'en' else hu
@@ -117,20 +118,18 @@ class UpdateController(QObject):
         self.status.setWordWrap(True); layout.addWidget(self.status)
         self.progress_bar = QProgressBar(); self.progress_bar.setValue(100 if self.staged else 0); layout.addWidget(self.progress_bar)
         row = QHBoxLayout(); layout.addLayout(row)
-        self.download_button = QPushButton(self.tr('Letöltés', 'Download')); row.addWidget(self.download_button)
-        self.download_button.clicked.connect(self.download)
         self.install_button = QPushButton(self.tr('Frissítés és újraindítás', 'Update and restart')); row.addWidget(self.install_button)
-        self.install_button.setEnabled(bool(self.staged) and bool(getattr(sys, 'frozen', False)))
-        self.install_button.clicked.connect(self.install)
+        self.install_button.setEnabled(bool(getattr(sys, 'frozen', False)))
+        self.install_button.clicked.connect(self.update_and_restart)
         later = QPushButton(self.tr('Később', 'Later')); later.clicked.connect(dialog.reject); row.addWidget(later)
         dialog.finished.connect(self.cancel_download)
-        if self.staged: self.download_button.setEnabled(False)
         if not getattr(sys, 'frozen', False): self.status.setText(self.tr('Az automatikus telepítés az EXE-változatban használható.', 'Automatic installation is available in the EXE build.'))
         dialog.show()
 
     def download(self):
-        if self.worker and self.worker.isRunning(): return
-        self.download_button.setEnabled(False); self.status.setText(self.tr('Letöltés és ellenőrzés…', 'Downloading and verifying…'))
+        if self.worker and self.worker.isRunning():
+            self._update_requested = False; return
+        self.install_button.setEnabled(False); self.status.setText(self.tr('Letöltés és ellenőrzés…', 'Downloading and verifying…'))
         worker = UpdateWorker(self.version, self.manifest); self.worker = worker
         worker.progress.connect(self.progress_bar.setValue)
         def ready(result):
@@ -139,21 +138,35 @@ class UpdateController(QObject):
             self.staged = result; self.progress_bar.setValue(100)
             self.status.setText(self.tr('A csomag ellenőrizve. Telepítésre kész.', 'Package verified. Ready to install.'))
             self.install_button.setEnabled(bool(getattr(sys, 'frozen', False)))
+            if self._update_requested: self.install()
         def failed(error):
-            self.download_button.setEnabled(True)
+            self._update_requested = False
+            self.install_button.setEnabled(bool(getattr(sys, 'frozen', False)))
             if self.dialog.isVisible(): self.status.setText(error or self.tr('Letöltés megszakítva.', 'Download cancelled.'))
         worker.done.connect(ready); worker.failed.connect(failed); self.run_worker(worker)
 
     def cancel_download(self):
+        self._update_requested = False
         if self.worker and self.worker.manifest is not None and self.worker.isRunning(): self.worker.requestInterruption()
+
+    def update_and_restart(self):
+        if self.installing or self._update_requested: return
+        if any(getattr(thread, 'process', None) is not None and thread.process.poll() is None for thread in self.window.running_threads()):
+            self.status.setText(self.tr('Előbb állítsd le a lejátszást.', 'Stop playback before updating.')); return
+        self._update_requested = True
+        if self.staged: self.install()
+        else: self.download()
 
     def install(self):
         if not self.staged or self.installing: return
         if any(getattr(thread, 'process', None) is not None and thread.process.poll() is None for thread in self.window.running_threads()):
+            self._update_requested = False
             self.status.setText(self.tr('Előbb állítsd le a lejátszást.', 'Stop playback before updating.')); return
         try:
             updates.prepare_install(self.staged, sys.executable, self.data_dir)
         except Exception as error:
+            self._update_requested = False
+            if isinstance(error, updates.UpdateError): self.staged = None
             self.status.setText(str(error)); return
         self.installing = True; self.dialog.accept()
         settings = getattr(self.window, 'settings_dialog', None)

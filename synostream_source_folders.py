@@ -3,9 +3,14 @@ import copy
 import ntpath
 import sqlite3
 import uuid
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QListWidget, QComboBox, QDialogButtonBox, QFormLayout, QLineEdit, QWidget, QInputDialog)
+    QListWidget, QComboBox, QDialogButtonBox, QFormLayout, QLineEdit, QWidget, QInputDialog, QMessageBox)
 from synostream_sources import SourceRouter, parse_pairs, remote_root, expand_mapped_path
+
+
+class SourcesBusy(RuntimeError):
+    """Saving must wait until source-dependent background work has drained."""
 
 
 class FolderMigrationRouter(SourceRouter):
@@ -87,6 +92,29 @@ def records_from_settings(settings, libraries):
     return records
 
 
+def suggested_pair(records):
+    """Suggest only exact SMB share/subfolder matches; confirmation is required."""
+    for left, local in enumerate(records):
+        if not local.get('local_root') or local.get('remote_root'): continue
+        expanded = expand_mapped_path(local['local_root']).replace('\\', '/')
+        if not expanded.startswith('//'): continue
+        parts = [part for part in expanded.split('/') if part]
+        if len(parts) < 2: continue
+        suffix = '/'.join(parts[1:]).casefold()
+        candidates = [right for right, remote in enumerate(records)
+            if remote.get('library_id') == local.get('library_id') and remote.get('remote_root')
+            and not remote.get('local_root') and remote['remote_root'][7:].strip('/').casefold() == suffix]
+        if len(candidates) == 1: return left, candidates[0]
+    return None
+
+
+def combine_records(records, local_index, remote_index):
+    result = copy.deepcopy(records)
+    result[remote_index]['local_root'] = result[local_index]['local_root']
+    result.pop(local_index)
+    return clean_records(result)
+
+
 class SourceFolderDialog(QDialog):
     def __init__(self, parent, row, browse_local, browse_nas, translate=lambda s:s, edit_menu=lambda w:None, text_prompt=QInputDialog.getText):
         super().__init__(parent)
@@ -141,6 +169,10 @@ class SourceFoldersDialog(QDialog):
     def __init__(self, parent, records, libraries, save, browse_local, browse_nas, translate=lambda s:s, selected=None, edit_menu=lambda w:None, text_prompt=QInputDialog.getText):
         super().__init__(parent)
         self.values = copy.deepcopy(records)
+        self._pending_save = None
+        self._save_timer = QTimer(self)
+        self._save_timer.setInterval(500)
+        self._save_timer.timeout.connect(self._try_save)
         self.edit_menu, self.text_prompt = edit_menu, text_prompt
         self.save_sources, self.browse_local, self.browse_nas, self.t = save, browse_local, browse_nas, translate
         self.setWindowTitle(translate('Médiatárak – forrásmappák'))
@@ -165,6 +197,7 @@ class SourceFoldersDialog(QDialog):
         buttons.addButton(translate('Mentés'), QDialogButtonBox.ButtonRole.AcceptRole)
         buttons.addButton(translate('Mégse'), QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept); buttons.rejected.connect(self.reject); layout.addWidget(buttons)
+        self.buttons = buttons
         self.refresh()
 
     def selection_changed(self, index):
@@ -202,6 +235,48 @@ class SourceFoldersDialog(QDialog):
         if selected >= 0: self.values.pop(self.indices[selected]); self.refresh()
 
     def accept(self):
-        try: self.save_sources(clean_records(self.values))
+        if self._pending_save is not None: return
+        try:
+            proposed = clean_records(self.values)
+            while (match := suggested_pair(proposed)) is not None:
+                local, remote = (proposed[index] for index in match)
+                answer = QMessageBox.question(self, self.t('Ugyanaz a forrásmappa?'),
+                    self.t('Ez a helyi hálózati mappa a megadott NAS-mappa másik elérése?') +
+                    '\n\n' + local['local_root'] + '\n' + remote['remote_root'] + '\n\n' +
+                    self.t('Összerendeléskor egy példányban jelennek meg a műsorok, és az elérhető helyi kapcsolatot használjuk.'),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Yes)
+                if answer == QMessageBox.StandardButton.Cancel: return
+                if answer == QMessageBox.StandardButton.No: break
+                proposed = combine_records(proposed, *match)
+            # Preserve the approved pairing even when the first save is busy.
+            self.values = proposed
+            self.refresh()
+            self._pending_save = proposed
         except (ValueError, OSError, RuntimeError, sqlite3.Error) as error: self.error.setText(self.t(str(error))); return
+        self._try_save()
+
+    def _waiting(self, waiting):
+        for widget in (self.library, self.listing, self.add): widget.setEnabled(not waiting)
+        self.edit.setEnabled(not waiting and self.listing.currentRow() >= 0)
+        self.remove.setEnabled(not waiting and self.listing.currentRow() >= 0)
+        for button in self.buttons.buttons():
+            if self.buttons.buttonRole(button) == QDialogButtonBox.ButtonRole.AcceptRole: button.setEnabled(not waiting)
+
+    def _try_save(self):
+        if self._pending_save is None: return
+        try:
+            self.save_sources(self._pending_save)
+        except SourcesBusy:
+            self.error.setStyleSheet('color:#c5b1d7')
+            self.error.setText(self.t('A háttérművelet befejezésére várunk. A jóváhagyott módosításokat utána automatikusan mentjük. Lejátszás esetén előbb zárd be a lejátszót.'))
+            self._waiting(True); self._save_timer.start(); return
+        except (ValueError, OSError, RuntimeError, sqlite3.Error) as error:
+            self._save_timer.stop(); self._pending_save = None; self._waiting(False)
+            self.error.setStyleSheet('color:#e9a8a8'); self.error.setText(self.t(str(error))); return
+        self._save_timer.stop(); self._pending_save = None
         super().accept()
+
+    def done(self, result):
+        self._save_timer.stop(); self._pending_save = None
+        super().done(result)

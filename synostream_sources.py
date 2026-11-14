@@ -218,37 +218,38 @@ class SourceRouter:
     def invalidate(self, pair):
         with self.lock: self.health[pair.id] = (False, time.monotonic() + 5)
 
-    def available(self, pair):
+    def available(self, pair, *, refresh=False, timeout=None):
         with self.lock: previous = self.health.get(pair.id)
-        if previous and previous[1] > time.monotonic():
+        if not refresh and previous and previous[1] > time.monotonic():
             return previous[0]
         def probe():
             # A successful ping/192.168 address alone is not evidence of access.
             with os.scandir(pair.local) as entries: next(entries, None)
             return True
         try:
-            result = self.io.run(('probe', pair.local), probe, self.timeout)
+            result = self.io.run(('probe', pair.local), probe, self.timeout if timeout is None else timeout)
         except (OSError, TimeoutError):
             result = False
         with self.lock: self.health[pair.id] = (result, time.monotonic() + 5)
         return result
 
-    def local_operation(self, path, operation):
+    def local_operation(self, path, operation, *, refresh=False, timeout=None):
         pair = self.pair_for(path)
-        if pair is None or not self.available(pair):
+        if pair is None or not self.available(pair, refresh=refresh, timeout=timeout):
             raise OSError('A helyi elérés nem áll rendelkezésre.')
         try:
-            return self.io.run(('operation', operation.__name__, self.physical(path)), lambda: operation(self.physical(path)), self.timeout)
+            return self.io.run(('operation', operation.__name__, self.physical(path)), lambda: operation(self.physical(path)), self.timeout if timeout is None else timeout)
         except (OSError, TimeoutError):
             self.invalidate(pair)
             raise
 
-    def playback_path(self, path):
+    def playback_path(self, path, *, recheck=False):
         canonical = self.canonical(path)
         if self.pair_for(canonical) is None:
             return canonical
         try:
-            exists = self.local_operation(canonical, os.path.isfile)
+            exists = self.local_operation(canonical, os.path.isfile, refresh=recheck,
+                timeout=max(3.0, self.timeout) if recheck else None)
             return self.physical(canonical) if exists else canonical
         except (OSError, TimeoutError):
             return canonical
