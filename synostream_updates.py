@@ -181,9 +181,19 @@ def stage_package(manifest, downloads=None, cancelled=lambda: False, progress=la
 
 def prepare_install(staged, current_exe, data_dir):
     if not getattr(sys, 'frozen', False): raise UpdateError('Az automatikus telepítés az EXE-változatban használható.')
+    manifest = validate_manifest(staged['manifest'])
+    stage = Path(staged['stage']).resolve(); target = Path(staged['target']).resolve()
+    if (stage.parent != downloads_directory().resolve() or not stage.name.startswith('.synostream-update-')
+            or target != stage.parent / ('SynoStream v' + manifest['version']) or target.exists()):
+        raise UpdateError('Érvénytelen vagy már létező frissítési célmappa.')
+    payload = stage / 'payload'; exe = payload / f'SynoStream_{manifest["version"]}.exe'
+    if (stage.is_symlink() or stage.is_junction() or payload.is_symlink() or payload.is_junction()
+            or exe.is_symlink() or not exe.is_file() or exe.stat().st_size != manifest['exe_size']
+            or sha256(exe) != manifest['exe_sha256']):
+        raise UpdateError('A letöltött program megváltozott vagy hiányzik. Töltsd le újra.')
     job = {**staged, 'old_exe': str(Path(current_exe).resolve()), 'data_dir': str(Path(data_dir).resolve()),
            'parent_pid': os.getpid(), 'token': uuid.uuid4().hex}
-    stage = Path(job['stage']); helper = stage / 'update-helper.exe'
+    helper = stage / 'update-helper.exe'
     shutil.copy2(current_exe, helper)
     job_path = stage / 'job.json'; job_path.write_text(json.dumps(job), encoding='utf-8')
     env = os.environ.copy(); env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
@@ -230,12 +240,48 @@ def acknowledge_update(args, version):
     if '--updated-from' not in args: return
     try:
         index = args.index('--updated-from'); receipt = Path(args[index + 1]); token = args[index + 2]
-        # Acknowledgements are confined to this user's update staging directory.
-        if receipt.name != 'receipt.json' or not receipt.parent.name.startswith('.synostream-update-'):
+        receipt = receipt.resolve(); stage = receipt.parent
+        if (receipt.name != 'receipt.json' or not stage.name.startswith('.synostream-update-')
+                or stage.parent != downloads_directory().resolve() or stage.is_symlink() or stage.is_junction()):
             return
         if not re.fullmatch('[0-9a-f]{32}', token): return
+        job = json.loads((stage / 'job.json').read_text(encoding='utf-8'))
+        if job.get('token') != token or job.get('manifest', {}).get('version') != version:
+            return
         _atomic_json(receipt, {'version': version, 'token': token})
-    except (ValueError, IndexError, OSError): pass
+    except (ValueError, IndexError, OSError, TypeError, AttributeError): pass
+
+
+def cleanup_completed_updates():
+    """Remove only validated, completed updater caches, never user data/backups."""
+    root = downloads_directory().resolve(); count = 0
+    for stage in root.glob('.synostream-update-*'):
+        try:
+            if stage.is_symlink() or stage.is_junction() or not stage.is_dir(): continue
+            allowed = {'job.json', 'receipt.json', 'result.json', 'update-helper.exe'}
+            if any(path.name not in allowed or path.is_symlink() or path.is_junction() or path.is_dir() for path in stage.iterdir()): continue
+            job = json.loads((stage / 'job.json').read_text(encoding='utf-8'))
+            result = json.loads((stage / 'result.json').read_text(encoding='utf-8'))
+            m = validate_manifest(job['manifest'])
+            target = root / ('SynoStream v' + m['version'])
+            if (Path(job['stage']).resolve() != stage.resolve() or Path(job['target']).resolve() != target
+                    or result != {'status':'installed', 'version':m['version']}): continue
+            if not target.is_dir() or target.is_symlink() or target.is_junction(): continue
+            if sha256(target / f'SynoStream_{m["version"]}.exe') != m['exe_sha256']: continue
+            # Windows denies deleting an executing helper. Try this first so
+            # a busy helper leaves its diagnostic/validation files intact.
+            helper = stage / 'update-helper.exe'
+            if helper.exists(): helper.unlink()
+            shutil.rmtree(stage); count += 1
+        except (OSError, ValueError, TypeError, KeyError): continue
+    return count
+
+
+def _retire_failed_install(target):
+    """Keep the failed program for diagnosis, freeing the canonical retry path."""
+    if target.is_symlink() or target.is_junction(): return
+    try: target.rename(target.with_name(target.name + ' - failed-' + uuid.uuid4().hex[:8]))
+    except OSError: pass
 
 
 def _snapshot(data, folder):
@@ -297,6 +343,7 @@ def install_job(job_path, *, wait_parent=_wait_parent, launch=subprocess.Popen, 
             process = launch([str(target / exe.name), '--updated-from', str(receipt), job['token']], env=env)
         except OSError:
             lock = acquire_application_lock(data, timeout=10); _restore(data, snapshot); lock.close()
+            _retire_failed_install(target)
             if old.is_file(): launch([str(old)], env=env)
             raise UpdateError('Az új verzió nem indítható el. A korábbi verzió megmaradt.')
         deadline = time.monotonic() + health_timeout
@@ -310,6 +357,7 @@ def install_job(job_path, *, wait_parent=_wait_parent, launch=subprocess.Popen, 
                     return target
             if process.poll() is not None:
                 lock = acquire_application_lock(data, timeout=10); _restore(data, snapshot); lock.close()
+                _retire_failed_install(target)
                 if old.is_file(): launch([str(old)], env=env)
                 raise UpdateError('Az új verzió nem indult el. A korábbi adatok és verzió visszaálltak.')
             time.sleep(.2)

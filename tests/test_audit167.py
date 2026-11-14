@@ -96,7 +96,7 @@ def test_corrupt_marker_preserved_and_schema_guard_kept(tmp_path, content):
     marker.write_bytes(content)
     with sqlite3.connect(tmp_path / 'media_library.db') as db:
         db.execute('PRAGMA user_version=99')
-    backup_before_upgrade(tmp_path, '1.95')
+    backup_before_upgrade(tmp_path, '1.96')
     preserved = list(tmp_path.glob('data_version.corrupt-*.json'))
     assert len(preserved) == 1 and preserved[0].read_bytes() == content
     with sqlite3.connect(tmp_path / 'media_library.db') as db:

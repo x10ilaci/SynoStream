@@ -32,22 +32,29 @@ def session():
 
 def verify(directory):
     from synostream_updates import validate_manifest, sha256
+    from release_guard import scan_zip, scan_executable, scan_bytes, UnsafeRelease
     root = Path(directory); m = validate_manifest(json.loads((root/'update.json').read_text(encoding='utf-8-sig')))
     version = m['version']; base = f'SynoStream_{version}'
     names = [base+'.exe', base+'_Windows_x64.zip', base+'_Source.zip', base+'_SHA256.txt', 'update.json']
-    assert (root/m['filename']).stat().st_size == m['size']
-    assert sha256(root/m['filename']) == m['sha256'] and sha256(root/(base+'.exe')) == m['exe_sha256']
-    for line in (root/(base+'_SHA256.txt')).read_text().splitlines():
-        digest, name = line.split(); assert name in names and sha256(root/name) == digest
     for name in names:
-        assert (root/name).is_file(), name
-        if not name.endswith('.zip'): continue
-        with zipfile.ZipFile(root/name) as archive:
-            assert archive.testzip() is None
-            for member in archive.namelist():
-                parts = member.replace('\\','/').split('/')
-                assert not {'config.json','credentials.dat','media_library.db','portable.flag','.env'} & set(parts), member
-                assert '..' not in parts and not member.startswith('/'), member
+        if not (root/name).is_file(): raise UnsafeRelease('Missing release artifact: '+name)
+    if (root/m['filename']).stat().st_size != m['size'] or (root/(base+'.exe')).stat().st_size != m['exe_size']:
+        raise UnsafeRelease('Release artifact size mismatch')
+    if sha256(root/m['filename']) != m['sha256'] or sha256(root/(base+'.exe')) != m['exe_sha256']:
+        raise UnsafeRelease('Release artifact checksum mismatch')
+    checked = set()
+    for line in (root/(base+'_SHA256.txt')).read_text().splitlines():
+        parts = line.split()
+        if len(parts) != 2: raise UnsafeRelease('Invalid checksum entry')
+        digest, name = parts
+        if name not in names[:3] or name in checked or sha256(root/name) != digest:
+            raise UnsafeRelease('Invalid artifact checksum: '+name)
+        checked.add(name)
+    if checked != set(names[:3]): raise UnsafeRelease('Incomplete artifact checksums')
+    for name in names:
+        if name.endswith('.zip'): scan_zip(root/name)
+        elif name.endswith('.exe'): scan_executable(root/name)
+        else: scan_bytes((root/name).read_bytes(), name)
     return m, names
 
 

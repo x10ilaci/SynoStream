@@ -108,7 +108,7 @@ def test_cpp_static_file_dialog_close_keeps_wrapper_alive(media, app):
 
 def test_application_restarts_exit_cleanly(tmp_path):
     import subprocess, sys, os
-    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.95.py'
+    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.96.py'
     environment = os.environ.copy()
     environment['SYNOSTREAM_DATA_DIR'] = str(tmp_path / 'restart-data')
     environment['QT_QPA_PLATFORM'] = 'offscreen'
@@ -151,7 +151,7 @@ def test_saved_immersive_state_never_hides_startup_title_bar(media, app, saved_s
 @pytest.mark.skipif(__import__('sys').platform != 'win32', reason='Windows native window regression')
 def test_native_windows_restored_maximized_is_not_fullscreen(tmp_path):
     import subprocess, sys, os, textwrap
-    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.95.py'
+    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.96.py'
     script = r"""
 import importlib.util, sys, ctypes
 from pathlib import Path

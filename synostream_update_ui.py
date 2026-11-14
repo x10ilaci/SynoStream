@@ -31,6 +31,14 @@ class UpdateWorker(QThread):
         except Exception as error: self.failed.emit(str(error))
 
 
+class UpdateSettingsGroup(QGroupBox):
+    def __init__(self, controller):
+        super().__init__(); self.controller = controller
+
+    def retranslate_texts(self):
+        self.controller.refresh_settings_texts()
+
+
 class UpdateController(QObject):
     def __init__(self, window, version, config, save, run_worker, data_dir, language=lambda:'hu'):
         super().__init__(window)
@@ -42,15 +50,23 @@ class UpdateController(QObject):
     def tr(self, hu, en): return en if self.language() == 'en' else hu
 
     def settings_group(self):
-        group = QGroupBox(self.tr('Programfrissítés', 'Application updates')); layout = QVBoxLayout(group)
+        group = UpdateSettingsGroup(self); self.group = group; layout = QVBoxLayout(group)
         self.automatic = QCheckBox(self.tr('Frissítések automatikus keresése', 'Check for updates automatically'))
         self.automatic.setChecked(bool(self.config.get('check_updates', True)))
         self.automatic.toggled.connect(self.set_automatic); layout.addWidget(self.automatic)
         self.check_button = QPushButton(self.tr('Frissítések keresése', 'Check for updates'))
         self.check_button.clicked.connect(lambda: self.check(True)); layout.addWidget(self.check_button)
-        note = QLabel(self.tr('Az új verzió a Letöltések mappába kerül. A beállítások megmaradnak.',
-            'New versions are saved to Downloads. Your settings are retained.')); note.setWordWrap(True)
-        layout.addWidget(note); return group
+        self.note = QLabel(); self.note.setWordWrap(True)
+        layout.addWidget(self.note); self.refresh_settings_texts(); return group
+
+    def refresh_settings_texts(self):
+        if not hasattr(self, 'group') or self.check_button is None: return
+        self.group.setTitle(self.tr('Programfrissítés', 'Application updates'))
+        self.automatic.setText(self.tr('Frissítések automatikus keresése', 'Check for updates automatically'))
+        self.note.setText(self.tr('Az új verzió a Letöltések mappába kerül. A beállítások megmaradnak.',
+            'New versions are saved to Downloads. Your settings are retained.'))
+        self.check_button.setText(self.tr('Új verzió elérhető: ', 'Update available: ') + self.manifest['version']
+            if self.manifest else self.tr('Frissítések keresése', 'Check for updates'))
 
     def set_automatic(self, value):
         previous = self.config.get('check_updates', True); self.config['check_updates'] = value

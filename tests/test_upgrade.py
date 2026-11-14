@@ -135,13 +135,13 @@ def test_portable_mode(tmp_path, monkeypatch):
 
 def test_upgrade_backup_precedes_new_version_marker(tmp_path):
     (tmp_path / 'config.json').write_text('{"old":true}')
-    backup_before_upgrade(tmp_path, '1.95')
+    backup_before_upgrade(tmp_path, '1.96')
     copies = list((tmp_path / 'upgrade_backups').glob('*/config.json'))
     assert len(copies) == 1
     assert copies[0].read_text() == '{"old":true}'
     assert not (tmp_path / 'data_version.json').exists()
-    commit_data_version(tmp_path, '1.95')
-    backup_before_upgrade(tmp_path, '1.95')
+    commit_data_version(tmp_path, '1.96')
+    backup_before_upgrade(tmp_path, '1.96')
     assert len(list((tmp_path / 'upgrade_backups').glob('*/config.json'))) == 1
 
 

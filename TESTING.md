@@ -1,4 +1,4 @@
-# SynoStream 1.95 – ellenőrzés
+# SynoStream 1.96 – ellenőrzés
 
 ## Automatizált tesztek
 
@@ -19,9 +19,9 @@ Lefedett esetek: névfelismerés, epizódszámozás, NAS-kapcsolódás és újra
 
 ## Kézi célgépes ellenőrzés
 
-Az 1.95-ös regressziók a `tests/test_fixes175.py` fájlban vannak. A tényleges részletező adatai kézi párosítás után újratöltődnek; az előző lekérés késői válasza nem kerülhet bele. A hiányos File Station és Download Station lapozási eredmény hibára fut. A hibás útvonaloszlopú vagy elsődleges kulcsú mentések elutasításra kerülnek, a támogatott régi szerkezet migrálható. Az első adatmappa párhuzamos létrehozását szálakkal és két külön Python-folyamattal is ellenőrizzük, elkülönített felhasználói könyvtárban.
+Az 1.96-ös regressziók a `tests/test_fixes175.py` fájlban vannak. A tényleges részletező adatai kézi párosítás után újratöltődnek; az előző lekérés késői válasza nem kerülhet bele. A hiányos File Station és Download Station lapozási eredmény hibára fut. A hibás útvonaloszlopú vagy elsődleges kulcsú mentések elutasításra kerülnek, a támogatott régi szerkezet migrálható. Az első adatmappa párhuzamos létrehozását szálakkal és két külön Python-folyamattal is ellenőrizzük, elkülönített felhasználói könyvtárban.
 
-Az 1.95-es regressziók a `tests/test_fixes174.py` fájlban vannak: beolvasás közbeni kézi párosítás, elavult sorba állított eredmények, tartós kártyapillanatkép, korhatár újratöltése másik azonosítóhoz, készülő borító védelme, illetve 20 001 elemes helyi és NAS párosítási fájllisták. A hálózati időzítéseket tesztpéldányok és szálesemények vezérlik; ezek nem élő NAS-terhelésmérések.
+Az 1.96-es regressziók a `tests/test_fixes174.py` fájlban vannak: beolvasás közbeni kézi párosítás, elavult sorba állított eredmények, tartós kártyapillanatkép, korhatár újratöltése másik azonosítóhoz, készülő borító védelme, illetve 20 001 elemes helyi és NAS párosítási fájllisták. A hálózati időzítéseket tesztpéldányok és szálesemények vezérlik; ezek nem élő NAS-terhelésmérések.
 
 - A legutóbb használt médiatár nyíljon meg; helyi és NAS-os filmek és sorozatok is működjenek.
 - Mindhárom kártyaméretben ellenőrizd a borítók arányát, címek levágását és eszköztippjét, évszámot, megnézett állapotot és haladási sávot.
@@ -40,12 +40,12 @@ py -3.13 -m pip install -r requirements-build.txt
 .\build_windows.ps1
 ```
 
-Alapértelmezett kimenet: Downloads\SynoStream v1.95. A build védi az eredeti v1.54 mappát, és nem törli a korábbi kiadásokat.
+Alapértelmezett kimenet: Downloads\SynoStream v1.96. A build védi az eredeti v1.54 mappát, és nem törli a korábbi kiadásokat.
 
 Az élő DSM-verzió és az internetkapcsolat viselkedését célgépen is ellenőrizni kell. A helyi teljesítménymérés nem a NAS sebességét méri, és nem garantál azonos eredményt más gépen.
 
 
-## Download Station – 1.95
+## Download Station – 1.96
 
 A test_download_station.py helyi DSM-tesztszerverrel ellenőrzi a saját DownloadStation-munkamenetet, API-felderítést, lapozást, munkamenet-megújítást, hivatkozásos feladatot és multipart torrentfeltöltést, kiválasztott feladatműveleteket, jogosultsági hibákat, támogatott API-verziókat, valamint azt, hogy bizonytalan íróművelet nem ismétlődik meg. Qt-tesztek ellenőrzik a navigációt, stabil feladatazonosító szerinti kijelölést, befejezési jelzést és célzott médiatár-frissítést, több torrent hozzáadását, mappaböngészést, alapértelmezések mentését, fiókváltást és bezárást.
 
@@ -55,17 +55,17 @@ A test_selection_and_menus.py ellenőrzi a fájlszűrést, ritka fájlindexek po
 
 Kézi ellenőrzés: Hozzáadás után jelenjen meg a tartalomlista; NFO és sample alapból kikapcsolva. A kijelölés átállítható, a Mégse ne indítson feladatot. A típus-/médiatárválasztó és a NAS beállítása gomb hiányozzon. A jobbklikkes menük kövessék a felületi nyelvet.
 
-## 1.95 rendezés és torrentoldalak
+## 1.96 rendezés és torrentoldalak
 
 A test_task_sort_and_sites.py minden oszlopnál tényleges fejléc-kattintással ellenőrzi a két rendezési irányt, valamint frissítéskor a sorrend és a feladatkijelölés megtartását. Ellenőrzi az oldal hozzáadását, törlését, mentését, új ablakban betöltését, pontos URL megnyitását, üres lista megőrzését, hibás webcímek elutasítását és sikertelen mentés visszaállítását.
 
 Kézi ellenőrzés: műveletgombok egy sorban, alattuk saját oldalgombok; sok oldalnál vízszintes görgetés. A kezelőablak magyar és angol szövegei kövessék a felületi nyelvet.
 
-## 1.95 plakátpótlékok
+## 1.96 plakátpótlékok
 
 A korábbi kártya-újrahasznosítási teszt már a helyes elemhez tartozó plakátpótlékot ellenőrzi. Új ellenőrzések: 1000 különböző média mindhárom színre oszlik, a kiosztás gyorsítótár-törlés után is állandó, azonos méretnél mindössze három megosztott kép készül, méretváltáskor a szín megmarad, és a valódi borító felülírja a helyettesítőt. A médiatár előnézetét 1280×850 és 1000×720 méretben ellenőriztük.
 
-## 1.95 egyedi címsor
+## 1.96 egyedi címsor
 
 A test_window_chrome.py hét párbeszédablak-típuson ellenőrzi a közös címsort, eredeti ikont, címfrissítést, átméretezést és a bezárás/megszakítás eredményét. Ellenőrzi a főablak nagyítását, dupla kattintásos visszaállítását, kis méretét, teljes képernyős margóit, az átméretezési széleket, a Qt-fájlválasztó használatát és a nyelvváltást. Kritikus, nem kezelt Qt-hiba esetén a címsorteszt sikertelen.
 
@@ -75,19 +75,19 @@ Képi ellenőrzés: főablak két méretben, új torrent, torrentoldalak, üzene
 
 Az újraindítási regressziós teszt három külön folyamatban egymás után indítja és zárja be az alkalmazást, ugyanazzal az elkülönített adatmappával. A Qt által C++-ból létrehozott statikus fájlválasztó saját címsoros bezárását is ellenőrzi. A címsorok Python-wrapperét az alkalmazás élettartamához kötjük; az ablakot Qt-szülőkapcsolatból érjük el, és kilépéskor még a Python-leállás előtt takarítjuk.
 
-## 1.95 – mentett teljesképernyős állapot és natív nagyítás
+## 1.96 – mentett teljesképernyős állapot és natív nagyítás
 
 Négy mentett állapotból (teljes képernyő, nagyított + teljes képernyő, kis méret, mindhárom) ellenőrizzük a látható címsoros indulást és az újabb megnyitást. A natív Windows-regresszió külön folyamatban indul: teljes képernyős + nagyított mentést készít, az új főablak visszaállítja, majd a Win32 klienskoordináták alapján ellenőrzi, hogy a felület a monitor munkaterületén belül van. A Qt-ablak nagyított marad, teljes képernyős jelölés nélkül, látható címsorral.
 
-A konkrét hibás állapotot külön natív próbával is reprodukáltuk (1.63: rejtett címsor és WindowFullScreen; 1.95: látható címsor, csak WindowMaximized). A nagyítás/visszaállítás, dupla kattintás és kis méret natív próbája is sikeres. A teljes tesztcsomag és a csomagolt EXE-próbák futtatandók a kiadás előtt.
+A konkrét hibás állapotot külön natív próbával is reprodukáltuk (1.63: rejtett címsor és WindowFullScreen; 1.96: látható címsor, csak WindowMaximized). A nagyítás/visszaállítás, dupla kattintás és kis méret natív próbája is sikeres. A teljes tesztcsomag és a csomagolt EXE-próbák futtatandók a kiadás előtt.
 
-## 1.95 – médiainformációs ablak, majd részletezőablak bezárása
+## 1.96 – médiainformációs ablak, majd részletezőablak bezárása
 
 A test_modal_owner_state.py a valós open_media_detail → információs gomb → információs ablak bezárása → részletező X gomb útvonalat ellenőrzi. Tizenkét kombináció: film/sorozat, normál/nagyított főablak, belső X/Esc/Mégse. Ellenőrzi a főablak láthatóságát, a megelőző ablakállapot megtartását és a címsort a törlési események feldolgozása után is.
 
 Külön natív Windows-folyamat mind a tizenkét esetet kétszer futtatja; a natív párbeszédablak-stílus megőrzését is ellenőrzi. Ez kiegészíti a valódi egérkattintásos kézi próbát, amelyben film és sorozat esetén is az információs ablak, majd a részletezőablak X gombját nyomtuk meg. A javított főablak látható maradt.
 
-## 1.95 – auditban feltárt hibák
+## 1.96 – auditban feltárt hibák
 
 A test_audit_fixes.py külön alkalmazásfolyamatban ellenőrzi a saját és a szándékosan üres torrentoldal-lista visszatöltését. Ellenőrzi a régi konfiguráció nCore-alapértékét és a változatlan fájl újraírásának mellőzését.
 

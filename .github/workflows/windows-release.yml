@@ -22,6 +22,8 @@ jobs:
           python-version: '3.13'
       - name: Install pinned dependencies
         run: python -m pip install -r requirements.txt -r requirements-build.txt -r requirements-dev.txt
+      - name: Audit public source history
+        run: python release_guard.py --git-history
       - name: Verify release version
         shell: pwsh
         run: |
@@ -33,11 +35,18 @@ jobs:
       - name: Build executable, source and update manifest
         shell: pwsh
         run: ./build_windows.ps1 -PythonExecutable (Get-Command python).Source -OutputDirectory "$env:RUNNER_TEMP\SynoStream-release" -SkipDependencyInstall
+      - name: Audit release artifacts before upload
+        run: python -c "from publish_release import verify; verify(r'${{ runner.temp }}/SynoStream-release')"
       - name: Preserve release artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SynoStream-Windows-release
-          path: ${{ runner.temp }}/SynoStream-release/*
+          path: |
+            ${{ runner.temp }}/SynoStream-release/SynoStream_*.exe
+            ${{ runner.temp }}/SynoStream-release/SynoStream_*_Windows_x64.zip
+            ${{ runner.temp }}/SynoStream-release/SynoStream_*_Source.zip
+            ${{ runner.temp }}/SynoStream-release/SynoStream_*_SHA256.txt
+            ${{ runner.temp }}/SynoStream-release/update.json
           if-no-files-found: error
       - name: Prepare GitHub draft release
         if: github.ref_type == 'tag'
