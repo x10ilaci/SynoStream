@@ -1,0 +1,45 @@
+name: Build Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.txt -r requirements-build.txt -r requirements-dev.txt
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $releaseVersion = (Get-Content release_version.txt -Raw).Trim()
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$releaseVersion") { throw 'Tag and source version differ.' }
+          if (-not (Test-Path "SynoStream_$releaseVersion.py")) { throw 'Missing release entry point.' }
+      - name: Run regression tests
+        run: python -m pytest -x -q
+      - name: Build executable, source and update manifest
+        shell: pwsh
+        run: ./build_windows.ps1 -PythonExecutable (Get-Command python).Source -OutputDirectory "$env:RUNNER_TEMP\SynoStream-release" -SkipDependencyInstall
+      - name: Preserve release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SynoStream-Windows-release
+          path: ${{ runner.temp }}/SynoStream-release/*
+          if-no-files-found: error
+      - name: Prepare GitHub draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python publish_release.py --directory "${{ runner.temp }}/SynoStream-release"

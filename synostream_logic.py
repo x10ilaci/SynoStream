@@ -21,7 +21,7 @@ NOISE_RE = re.compile(
     r"\b(?:2160p|1080[pi]|720p|576[pi]|480p|4k|uhd|web[ -]?dl|web[ -]?rip|hdrip|brrip|bdrip|"
     r"dvdrip|hdtv|blu[ -]?ray|remux|x ?26[45]|h ?26[45]|xvid|divx|hevc|avc|aac|ac3|"
     r"dts(?:-hd)?|dd ?p? ?\d ?\d|atmos|hdr(?:10\+?)?|10 ?bit|dovi|dolby[ ._-]?vision)\b"
-    r"|\bS\d{1,2}(?:E\d{1,3})?\b"
+    r"|\bS\d{1,2}(?:E\d{0,3})?\b"
     r"|\bE0*\d{3,5}(?:[ ._-]*[-–][ ._-]*E?0*\d{3,5})?\b"
     r"|\bseason\s*\d{1,3}(?!\d)\b|\b\d{1,3}\s*\.?\s*(?:évad|evad)\b",
     re.IGNORECASE,
@@ -68,6 +68,10 @@ def clean_name(name, is_file=True):
         text = text[:last.start()]
 
     title = re.sub(r"\s+", " ", text).strip(" -")
+    # Pack labels describe the release, not the show. Keep a standalone title
+    # named "Complete", and words occurring inside an actual title.
+    if NOISE_RE.search(name):
+        title = re.sub(r"(?i)\s+(?:complete|full[ -]?series|all[ -]?seasons)$", "", title).strip()
     if not title:
         title = re.sub(r"\s+", " ", re.sub(r"[._]+", " ", name)).strip()
     return title, year
@@ -271,3 +275,49 @@ def parse_episode_range_hint(relative_path):
         scope = "/".join(scope_parts).casefold() or "."
         return scope, int(match.group(1)), int(match.group(2))
     return None
+
+
+_GENERIC_MOVIE_FOLDERS = {
+    "movie", "movies", "film", "films", "filmek", "media", "video", "videos",
+    "download", "downloads", "letoltes", "letoltesek", "animation", "animations",
+    "animacio", "animacios", "animated", "cartoons", "kids", "gyerek", "gyerekfilmek",
+    "collection", "collections", "gyujtemeny", "pack", "complete", "pixar", "disney",
+}
+
+
+def movie_search_context(filename, folder_name="", single_movie_folder=False):
+    """Prefer a year-labelled movie release folder over an abbreviated filename."""
+    title, year = clean_name(filename, is_file=True)
+    folder_title, folder_year = clean_name(folder_name, is_file=False)
+    normalized_folder = normalize_title(folder_title)
+    normalized_file = normalize_title(title)
+    # A release-group prefix can obscure an otherwise exact folder title.
+    # Require a technical release marker and a multiword exact suffix, not a guess.
+    prefixed_release = bool(
+        not year and not folder_year and NOISE_RE.search(folder_name)
+        and len(normalized_folder.split()) >= 2
+        and normalized_file.endswith(" " + normalized_folder)
+    )
+    generic = normalized_folder in _GENERIC_MOVIE_FOLDERS or bool(set(normalized_folder.split()) & {"collection", "collections", "gyujtemeny", "pack", "complete"})
+    use_folder = bool(single_movie_folder and folder_title and not generic
+                      and ((folder_year and (not year or year == folder_year)) or prefixed_release))
+    return {"title": folder_title if use_folder else title,
+            "year": folder_year if use_folder else year, "from_folder": use_folder}
+
+
+def is_sample_video(name):
+    return bool(re.search(r"(?i)(?:^|[ ._-])sample(?:[ ._-]|$)", str(name or "")))
+
+
+def release_filename_candidate(filename, folder_name):
+    """Use a repeated release tag as evidence, without a publisher-name list."""
+    tag = re.search(r"-([A-Za-z0-9_]{2,30})$", folder_name)
+    if not tag:
+        return None
+    prefix = re.match(re.escape(tag.group(1)) + r"[-_. ]+", filename, re.I)
+    if not prefix:
+        return None
+    title, year = clean_name(filename[prefix.end():], is_file=True)
+    if not title:
+        return None
+    return title, year or clean_name(folder_name, is_file=False)[1]

@@ -16,3 +16,6 @@ cache_posters/
 *.db-shm
 build/
 dist/
+
+.pytest_cache/
+*.spec

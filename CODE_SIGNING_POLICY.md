@@ -1,27 +1,21 @@
 # Code signing policy
 
-Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org/).
+The current Windows 1.95 release is **unsigned**. Its SHA256 checksums and update-manifest hashes verify file integrity; they do not constitute Authenticode signing.
 
-## Signed artifacts
+The earlier `.github/workflows/signpath-release.yml` is a preparatory workflow for version 1.54. Its presence does not mean that a signing certificate has been activated or that current releases are signed. No SignPath account, approval, token or certificate is required by the current build/update workflow.
 
-Only the Windows x64 SynoStream release executable is submitted for signing. Each signed file must be built by the GitHub Actions workflow in this repository from the matching release source. A release signing request must receive manual approval in SignPath before the signed artifact is distributed.
+If SignPath Foundation signing is enabled in a future release, only executables built from the matching public tagged source may be submitted. Each signing request must receive the maintainer's manual approval. Signing credentials must never be distributed with application files.
 
-## Project roles
+## Current release process
 
-Project roles are held by the repository maintainer:
+1. Update and test the source, entry-point version, build version and `release_version.txt`.
+2. Build locally with `build_windows.ps1`, or push the matching version tag to trigger `.github/workflows/windows-release.yml`.
+3. Verify the executable, source archive, Windows ZIP, SHA256 file and `update.json` together.
+4. The workflow creates a GitHub **draft**. Publish it after reviewing its artifacts. `publish_release.py --directory <release-folder> --publish` performs this final publication when authorized by the maintainer.
+5. The Windows updater discovers the latest published stable release through GitHub Releases.
 
-- Author and reviewer: [@x10ilaci](https://github.com/x10ilaci). Contributions from people without commit access are reviewed by the maintainer before merging.
-- Signing approver: [@x10ilaci](https://github.com/x10ilaci). Each release signing request is reviewed and approved by the maintainer.
+## Maintainer and privacy
 
-All repository and SignPath accounts used for signing must have multi-factor authentication enabled. Changes from contributors without commit access must be reviewed before merging. Release signing requests must be reviewed and approved by an authorized project maintainer.
+Project maintainer: [@x10ilaci](https://github.com/x10ilaci).
 
-## Privacy
-
-SynoStream does not send telemetry. Its network access is limited to the NAS and TMDB services configured by the operator, plus the MPV download required when the operator starts playback. The application does not transmit library credentials to the project maintainers.
-
-## Release process
-
-1. Build the release from the matching tagged source using the GitHub-hosted workflow in `.github/workflows/signpath-release.yml`.
-2. Submit only the unsigned executable produced by that workflow to the SignPath release policy.
-3. Review and approve the signing request in SignPath.
-4. Review the workflow artifact containing the signed executable, matching source archive, notices, and SHA-256 checksums before publishing it as a release.
+SynoStream does not send telemetry or library credentials to the maintainer. Network access includes the configured NAS, TMDB, the MPV download and optional Windows update checks/downloads through GitHub and GitHub's release-asset CDN. Automatic update checks can be disabled in Settings. No GitHub login is needed by application users.

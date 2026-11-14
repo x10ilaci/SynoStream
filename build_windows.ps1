@@ -1,12 +1,22 @@
 param(
-    [string]$PythonExecutable = ""
+    [string]$PythonExecutable = "",
+    [string]$OutputDirectory = "",
+    [switch]$SkipDependencyInstall
 )
 
 $ErrorActionPreference = "Stop"
 $sourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$version = "1.54"
+$version = "1.95"
 $appName = "SynoStream_$version"
-$downloadsDir = Join-Path ([Environment]::GetFolderPath("UserProfile")) "Downloads"
+if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    $OutputDirectory = Join-Path ([Environment]::GetFolderPath("UserProfile")) "Downloads\SynoStream v$version"
+}
+$outputDir = [IO.Path]::GetFullPath($OutputDirectory)
+$protectedOriginal = [IO.Path]::GetFullPath((Join-Path ([Environment]::GetFolderPath("UserProfile")) "Downloads\SynoStream v1.54")).TrimEnd('\')
+if ($outputDir.TrimEnd('\').Equals($protectedOriginal, [StringComparison]::OrdinalIgnoreCase) -or
+    $outputDir.StartsWith($protectedOriginal + '\', [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Az eredeti SynoStream v1.54 mappa és tartalma nem módosítható."
+}
 $stageDir = Join-Path $env:TEMP ("SynoStream_release_" + [guid]::NewGuid().ToString("N"))
 $binaryDir = Join-Path $stageDir "${appName}_Windows_x64"
 $sourceStage = Join-Path $stageDir "source\$appName"
@@ -36,9 +46,10 @@ $safePath = @(
 $originalPath = $env:PATH
 
 $sourceFiles = @(
-    ".gitignore", "BINARY_NOTICES.md", "build_windows.ps1", "LICENSE", "README.md",
+    ".gitignore", "BINARY_NOTICES.md", "build_windows.ps1", "LICENSE", "README.md", "release_tools.py", "publish_release.py", "synostream_updates.py", "synostream_update_ui.py",
     "requirements-build.txt", "requirements-dev.txt", "requirements.txt",
-    "${appName}.py", "synostream_logic.py", "TESTING.md", "THIRD_PARTY_NOTICES.md"
+    "${appName}.py", "synostream_logic.py", "synostream_nfo.py", "synostream_pairings.py", "synostream_nas.py", "synostream_storage.py",
+    "synostream_sources.py", "synostream_source_migration.py", "synostream_source_ui.py", "synostream_source_folders.py", "synostream_recommendations.py", "synostream_recommendation_ui.py", "synostream_library.py", "synostream_playback.py", "synostream_performance.py", "synostream_downloads.py", "synostream_download_ui.py", "synostream_torrent_selection.py", "synostream_file_selection_ui.py", "synostream_window_chrome.py", "synostream_window_identity.py", "CHANGELOG_1.95.md", "TESTING.md", "THIRD_PARTY_NOTICES.md"
 )
 $licensesDir = Join-Path $sourceDir "release_assets\licenses"
 if (-not (Test-Path -LiteralPath $licensesDir -PathType Container)) {
@@ -53,21 +64,25 @@ $publishFiles = @(
     "${appName}.exe",
     "${appName}_Windows_x64.zip",
     "${appName}_Source.zip",
-    "${appName}_SHA256.txt"
+    "${appName}_SHA256.txt", "update.json"
 )
 
 try {
     $env:PATH = $safePath -join ";"
     Set-Location -LiteralPath $sourceDir
 
-    & $pythonExe -m pip install -r requirements.txt -r requirements-build.txt
-    if ($LASTEXITCODE -ne 0) { throw "A buildfüggőségek telepítése nem sikerült." }
+    if (-not $SkipDependencyInstall) {
+        & $pythonExe -m pip install -r requirements.txt -r requirements-build.txt
+        if ($LASTEXITCODE -ne 0) { throw "A buildfüggőségek telepítése nem sikerült." }
+    }
 
-    & $pythonExe -m PyInstaller --noconfirm --clean --onefile --windowed `
+    & $pythonExe -m PyInstaller --noconfirm --onefile --windowed `
         --name $appName `
         --icon "assets\synostream.ico" `
         --add-data "LICENSE;." `
         --add-data "assets\synostream.ico;assets" `
+        --add-data "assets\tmdb.png;assets" `
+        --add-data "assets\qt\qtbase_hu.qm;assets\qt" `
         --add-data "assets\mpv\synostream_context.lua;assets\mpv" `
         "${appName}.py"
     if ($LASTEXITCODE -ne 0) { throw "A SynoStream EXE buildje nem sikerült." }
@@ -88,6 +103,10 @@ try {
     Copy-Item -LiteralPath (Join-Path $sourceDir "assets") -Destination $sourceStage -Recurse -Force
     Copy-Item -LiteralPath $licensesDir -Destination $sourceStage -Recurse -Force
 
+    $resolvedStage = [IO.Path]::GetFullPath($stageDir).TrimEnd('\') + '\'
+    if (-not ([IO.Path]::GetFullPath($sourceStage).StartsWith($resolvedStage, [StringComparison]::OrdinalIgnoreCase))) {
+        throw "A forráscsomag útvonala kívül esik a munkamappán."
+    }
     # A forráscsomag ne tartalmazzon helyi Python-gyorsítótárakat vagy fordított bytecode-ot.
     Get-ChildItem -LiteralPath $sourceStage -Directory -Filter "__pycache__" -Recurse |
         Remove-Item -Recurse -Force
@@ -100,6 +119,9 @@ try {
     Compress-Archive -Path $binaryDir -DestinationPath $binaryZip -CompressionLevel Optimal
     Compress-Archive -Path $sourceStage -DestinationPath $sourceZip -CompressionLevel Optimal
     Copy-Item -LiteralPath (Join-Path $binaryDir "${appName}.exe") -Destination $stageDir -Force
+
+    & $pythonExe (Join-Path $sourceDir 'release_tools.py') $stageDir $version (Join-Path $sourceDir "CHANGELOG_$version.md")
+    if ($LASTEXITCODE -ne 0) { throw "A frissítési leíró létrehozása nem sikerült." }
 
     $exeHash = (Get-FileHash -LiteralPath (Join-Path $binaryDir "${appName}.exe") -Algorithm SHA256).Hash.ToLowerInvariant()
     $binaryZipHash = (Get-FileHash -LiteralPath $binaryZip -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -116,10 +138,7 @@ try {
             throw "Hiányzó kiadási fájl: $name"
         }
     }
-    $publishDirectories = @(
-        $downloadsDir,
-        (Join-Path $downloadsDir "B")
-    )
+    $publishDirectories = @($outputDir)
     foreach ($publishDirectory in $publishDirectories) {
         New-Item -ItemType Directory -Path $publishDirectory -Force | Out-Null
         foreach ($name in $publishFiles) {
@@ -127,33 +146,21 @@ try {
         }
     }
 
-    # Régi, verziózott kiadási fájlok törlése csak a sikeres build és csomagolás után.
-    $oldReleasePattern = '^SynoStream_\d+\.\d+(?:_(?:Windows_x64|Source|SHA256))?\.(?:exe|zip|txt)$'
-    $cleanupFailures = @()
-    foreach ($publishDirectory in $publishDirectories) {
-        $oldReleaseFiles = Get-ChildItem -LiteralPath $publishDirectory -File | Where-Object {
-            $_.Name -match $oldReleasePattern -and $_.Name -notin $publishFiles
-        }
-        foreach ($oldFile in $oldReleaseFiles) {
-            try {
-                Remove-Item -LiteralPath $oldFile.FullName -Force -ErrorAction Stop
-            }
-            catch {
-                $cleanupFailures += "$($oldFile.FullName): $($_.Exception.Message)"
-            }
-        }
-    }
-
     Write-Output "Elkészült kiadási fájlok:"
     foreach ($publishDirectory in $publishDirectories) {
         $publishFiles | ForEach-Object { Get-Item -LiteralPath (Join-Path $publishDirectory $_) | Select-Object Name, Length, DirectoryName }
     }
-    if ($cleanupFailures.Count -gt 0) {
-        $cleanupDetails = $cleanupFailures -join [Environment]::NewLine
-        Write-Warning "Néhány régi kiadási fájlt a Windows nem engedett törölni:`n$cleanupDetails"
-    }
+
 }
 finally {
     $env:PATH = $originalPath
-    if (Test-Path -LiteralPath $stageDir) { Remove-Item -LiteralPath $stageDir -Recurse -Force }
+    $tempRoot = [IO.Path]::GetFullPath($env:TEMP).TrimEnd('\') + '\'
+    $finalStage = [IO.Path]::GetFullPath($stageDir)
+    if (-not $finalStage.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        (Split-Path -Leaf $finalStage) -notlike 'SynoStream_release_*') {
+        throw "Érvénytelen build-munkamappa; takarítás megszakítva."
+    }
+    if (Test-Path -LiteralPath $finalStage) { Remove-Item -LiteralPath $finalStage -Recurse -Force }
 }
+
+
