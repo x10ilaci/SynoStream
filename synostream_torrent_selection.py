@@ -52,12 +52,12 @@ class TorrentSelectionMixin:
             data.update({key: json.dumps(value, ensure_ascii=False, separators=(',', ':')) for key, value in params.items()})
             try:
                 if readonly:
-                    response = self.session.get(endpoint, params=data, timeout=(8, 30))
+                    response = self._get(endpoint, params=data, timeout=(8, 30))
                 elif upload:
-                    response = self.session.post(endpoint, data=data,
+                    response = self._post(endpoint, data=data,
                         files={'torrent': (upload[0], upload[1], 'application/x-bittorrent')}, timeout=(8, 60))
                 else:
-                    response = self.session.post(endpoint, data=data, timeout=(8, 60))
+                    response = self._post(endpoint, data=data, timeout=(8, 60))
                 try:
                     response.raise_for_status()
                     payload = response.json()

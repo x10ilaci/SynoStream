@@ -17,6 +17,9 @@ def bare_client():
     c = RemoteNASClient.__new__(RemoteNASClient)
     import threading
     c.lock = threading.RLock()
+    # This fixture bypasses __init__; declare the selected transport/profile explicitly.
+    c.credentials = {}
+    c.transport = 'quickconnect'
     c.sid = 'old-session'
     c.list_url = 'https://example.invalid/webapi/entry.cgi'
     c.download_url = c.list_url

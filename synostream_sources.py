@@ -355,3 +355,51 @@ class RoutedNASClient:
     def close(self):
         with self.lock:
             if self.remote is not None: self.remote.close()
+
+
+def nas_root_from_local(path, settings):
+    """Infer a File Station path only for the configured NAS host, never by title."""
+    from synostream_connections import local_nas_host
+    host = local_nas_host(settings)
+    if not host:
+        return None
+    expanded = expand_mapped_path(str(path or '')).replace('\\', '/')
+    if not expanded.startswith('//'):
+        return None
+    parts = [part for part in expanded.split('/') if part]
+    if len(parts) < 2 or parts[0].casefold() != host.casefold():
+        return None
+    return remote_root('/' + '/'.join(parts[1:]))
+
+
+def automatic_pairs(settings):
+    """SMB is an optional optimization of a NAS source, not a second source."""
+    import hashlib
+    from synostream_connections import local_nas_host
+    pairs = parse_pairs(settings.get('paired_sources', []))
+    host = local_nas_host(settings)
+    # Windows UNC does not support colon-separated IPv6 literals directly.
+    if not host or ':' in host:
+        return pairs
+    roots = []
+    for kind in ('movies', 'shows'):
+        paths = settings.get(kind + '_paths')
+        if not isinstance(paths, list): paths = [settings.get(kind + '_path', '')]
+        paths = list(paths)
+        if settings.get('remote_' + kind + '_path'):
+            paths.append(PREFIX + settings['remote_' + kind + '_path'])
+        roots.extend((kind, value) for value in paths)
+    for library in settings.get('custom_libraries', []):
+        roots.extend((library.get('id'), value) for value in library.get('paths', []))
+    for library_id, value in roots:
+        if not isinstance(value, str): continue
+        remote = remote_root(value) if value.startswith(PREFIX) else nas_root_from_local(value, settings)
+        if not remote: continue
+        local = '\\\\' + host + '\\' + remote[len(PREFIX):].strip('/').replace('/', '\\')
+        identifier = 'auto-' + hashlib.sha256((str(library_id) + '\0' + remote).encode()).hexdigest()[:24]
+        candidate = dict(id=identifier, library_id=library_id, local_root=local, remote_root=remote)
+        # Parent mappings already route their child folders. Explicit legacy
+        # aliases win; never reinterpret a user-confirmed mapping.
+        try: pairs = parse_pairs([*(p.to_dict() for p in pairs), candidate])
+        except ValueError: continue
+    return pairs

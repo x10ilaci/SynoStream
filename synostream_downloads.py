@@ -79,14 +79,14 @@ class DownloadStationClient(TorrentSelectionMixin, RemoteNASClient):
                 data = dict(api=TASK_API, version=self.task_version, method=method, _sid=self.sid, **parameters)
                 try:
                     if readonly:
-                        response = self.session.get(self.task_url, params=data, timeout=(8, 25))
+                        response = self._get(self.task_url, params=data, timeout=(8, 25))
                     elif file_payload:
                         name, content = file_payload
                         # Requests serializes regular form parameters before the multipart file, as DSM requires.
-                        response = self.session.post(self.task_url, data=data,
+                        response = self._post(self.task_url, data=data,
                             files={'file': (name, content, 'application/x-bittorrent')}, timeout=(8, 45))
                     else:
-                        response = self.session.post(self.task_url, data=data, timeout=(8, 30))
+                        response = self._post(self.task_url, data=data, timeout=(8, 30))
                     try:
                         if readonly and response.status_code in (429, 502, 503, 504) and attempt < attempts - 1:
                             self._pause(0.5 * 2 ** attempt)

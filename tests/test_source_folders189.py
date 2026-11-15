@@ -18,7 +18,7 @@ def test_existing_settings_are_combined_without_duplicates():
     settings=dict(movies_paths=[LOCAL,REMOTE],remote_movies_path=REMOTE[7:],shows_paths=['C:/TV'],paired_sources=values())
     result=records_from_settings(settings,LIBRARIES)
     assert len(result)==2 and result[0]==values()[0]
-    assert result[1]['local_root']=='C:/TV'
+    assert result[1]['local_root']==r'C:\TV'
 
 @pytest.mark.parametrize('local,remote',[(LOCAL,''),('',REMOTE),('C:/Films',''),(LOCAL,REMOTE)])
 def test_local_remote_and_paired_sources_are_valid(local,remote):
@@ -36,7 +36,8 @@ def test_browse_buttons_fill_fields_without_saving(app):
     try:
         next(b for b in dialog.findChildren(QPushButton) if b.text()=='Helyi mappa tallózása…').click()
         next(b for b in dialog.findChildren(QPushButton) if b.text()=='NAS-mappa tallózása…').click()
-        assert dialog.local.text()==LOCAL and dialog.remote.text()==REMOTE
+        assert dialog.local.text()=="" and dialog.remote.text()==REMOTE
+        assert dialog.path.text()==REMOTE
         local.assert_called_once_with(dialog);nas.assert_called_once_with(dialog)
         dialog.accept();assert dialog.result()==QDialog.DialogCode.Accepted
     finally:dialog.close();dialog.deleteLater();app.processEvents()

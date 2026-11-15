@@ -179,8 +179,7 @@ def stage_package(manifest, downloads=None, cancelled=lambda: False, progress=la
         raise
 
 
-def prepare_install(staged, current_exe, data_dir):
-    if not getattr(sys, 'frozen', False): raise UpdateError('Az automatikus telepítés az EXE-változatban használható.')
+def _validate_staged(staged):
     manifest = validate_manifest(staged['manifest'])
     stage = Path(staged['stage']).resolve(); target = Path(staged['target']).resolve()
     if (stage.parent != downloads_directory().resolve() or not stage.name.startswith('.synostream-update-')
@@ -191,6 +190,68 @@ def prepare_install(staged, current_exe, data_dir):
             or exe.is_symlink() or not exe.is_file() or exe.stat().st_size != manifest['exe_size']
             or sha256(exe) != manifest['exe_sha256']):
         raise UpdateError('A letöltött program megváltozott vagy hiányzik. Töltsd le újra.')
+    return manifest, stage, target
+
+
+def queue_update(staged, data_dir, current_version):
+    manifest, stage, target = _validate_staged(staged)
+    if version_tuple(manifest['version']) <= version_tuple(current_version):
+        raise UpdateError('A várakozó frissítés nem újabb a jelenlegi verziónál.')
+    marker = Path(data_dir) / 'pending_update.json'
+    _atomic_json(marker, {'stage':str(stage), 'target':str(target), 'manifest':manifest})
+    return marker
+
+
+def pending_update(data_dir, current_version):
+    marker = Path(data_dir) / 'pending_update.json'
+    if not marker.exists(): return None
+    if marker.is_symlink() or marker.stat().st_size > 262144:
+        raise UpdateError('Érvénytelen várakozó frissítés.')
+    try:
+        staged = json.loads(marker.read_text(encoding='utf-8'))
+        manifest, stage, target = _validate_staged(staged)
+        if version_tuple(manifest['version']) <= version_tuple(current_version):
+            marker.unlink(); return None
+        return {'stage':str(stage), 'target':str(target), 'manifest':manifest}
+    except (ValueError, KeyError, TypeError) as exc:
+        raise UpdateError('A várakozó frissítés leírója sérült.') from exc
+
+
+def clear_pending_update(data_dir, staged=None):
+    marker = Path(data_dir) / 'pending_update.json'
+    if staged is not None and marker.exists():
+        saved = json.loads(marker.read_text(encoding='utf-8'))
+        if saved.get('stage') != staged.get('stage'): return
+    marker.unlink(missing_ok=True)
+
+
+def launch_pending_update(current_version, current_exe, data_dir):
+    """Called on next startup while holding the data lock, before DB migration/GUI."""
+    if not getattr(sys, 'frozen', False): return False
+    config_file = Path(data_dir) / 'config.json'
+    try:
+        config = json.loads(config_file.read_text(encoding='utf-8-sig'))
+        if not isinstance(config, dict) or config.get('auto_update') is not True: return False
+        staged = pending_update(data_dir, current_version)
+        if staged is None: return False
+        # Consume before launch so rollback cannot repeatedly retry this update.
+        clear_pending_update(data_dir, staged)
+        try:
+            prepare_install(staged, current_exe, data_dir)
+        except Exception:
+            _atomic_json(Path(data_dir) / 'pending_update.json', staged)
+            raise
+        return True
+    except (OSError, ValueError, KeyError, TypeError, UpdateError) as error:
+        # Updating must never prevent the existing application from opening.
+        try: _atomic_json(Path(data_dir) / 'pending_update_error.json', {'error':str(error)})
+        except OSError: pass
+        return False
+
+
+def prepare_install(staged, current_exe, data_dir):
+    if not getattr(sys, 'frozen', False): raise UpdateError('Az automatikus telepítés az EXE-változatban használható.')
+    manifest, stage, target = _validate_staged(staged)
     job = {**staged, 'old_exe': str(Path(current_exe).resolve()), 'data_dir': str(Path(data_dir).resolve()),
            'parent_pid': os.getpid(), 'token': uuid.uuid4().hex}
     helper = stage / 'update-helper.exe'

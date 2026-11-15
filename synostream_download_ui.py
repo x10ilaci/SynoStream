@@ -530,7 +530,7 @@ class DownloadPage(QWidget):
 
     def credentials(self):
         config = self.services.config()
-        return {key: config.get(key, '') for key in ('quickconnect_id', 'nas_username', 'nas_password')}
+        return {key: config.get(key, '') for key in ('quickconnect_id', 'nas_username', 'nas_password', 'nas_direct_url', 'nas_local_url')}
 
     def start_operation(self, operation, success=None, failure=None):
         if self.busy or self.closing:
@@ -701,13 +701,18 @@ class DownloadPage(QWidget):
         else:
             QTimer.singleShot(0, callback)
 
+    def has_credentials(self):
+        values = self.credentials()
+        return bool(values.get('nas_username') and values.get('nas_password')
+                    and (values.get('quickconnect_id') or values.get('nas_direct_url') or values.get('nas_local_url')))
+
     def add_download(self, files=None):
         if self.busy or self.closing or self.dialog_open:
             return
-        if not all(self.credentials().values()):
+        if not self.has_credentials():
             self.status.setText(self.tr('A NAS belépési adatait a Beállítások / Távoli NAS alatt adhatod meg.'))
             self.services.configure_nas()
-            if not all(self.credentials().values()):
+            if not self.has_credentials():
                 return
         self.dialog_open = True
         dialog = CreateDownloadDialog(self, files if isinstance(files, list) else None)

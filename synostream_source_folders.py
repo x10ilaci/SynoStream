@@ -6,7 +6,7 @@ import uuid
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QListWidget, QComboBox, QDialogButtonBox, QFormLayout, QLineEdit, QWidget, QInputDialog, QMessageBox)
-from synostream_sources import SourceRouter, parse_pairs, remote_root, expand_mapped_path
+from synostream_sources import SourceRouter, parse_pairs, remote_root, expand_mapped_path, automatic_pairs, nas_root_from_local
 
 
 class SourcesBusy(RuntimeError):
@@ -15,8 +15,15 @@ class SourcesBusy(RuntimeError):
 
 class FolderMigrationRouter(SourceRouter):
     """Also preserve history when an existing paired source becomes local-only."""
-    def __init__(self, records):
-        super().__init__(parse_pairs([r for r in records if r['local_root'] and r['remote_root']]))
+    def __init__(self, records, settings=None):
+        settings = copy.deepcopy(settings or {})
+        settings['paired_sources'] = [r for r in records if r['local_root'] and r['remote_root']]
+        settings['movies_paths'] = [r['remote_root'] or r['local_root'] for r in records if r['library_id'] == 'movies']
+        settings['shows_paths'] = [r['remote_root'] or r['local_root'] for r in records if r['library_id'] == 'shows']
+        settings['remote_movies_path'] = settings['remote_shows_path'] = ''
+        for library in settings.get('custom_libraries', []):
+            library['paths'] = [r['remote_root'] or r['local_root'] for r in records if r['library_id'] == library['id']]
+        super().__init__(automatic_pairs(settings))
         self.local_only = {r['id']: r['local_root'] for r in records if r['local_root'] and not r['remote_root']}
 
     def rebase(self, path, previous):
@@ -61,6 +68,30 @@ def clean_records(records):
     return result
 
 
+def unify_records(records, settings):
+    values = copy.deepcopy(records)
+    original_remote_ids = {r.get('id') for r in records if r.get('remote_root')}
+    for row in values:
+        if row.get('local_root') and not row.get('remote_root'):
+            inferred = nas_root_from_local(row['local_root'], settings)
+            if inferred: row['remote_root'] = inferred
+    result = []
+    for row in values:
+        remote = row.get('remote_root', '')
+        previous = next((old for old in result if remote and old.get('library_id') == row.get('library_id')
+            and old.get('remote_root', '').casefold() == remote.casefold()), None)
+        if previous is not None:
+            if row.get('local_root') and previous.get('local_root') and ntpath.normcase(row['local_root']) != ntpath.normcase(previous['local_root']):
+                raise ValueError('Ehhez a NAS-mappához több különböző helyi elérés tartozik. Válaszd ki a megtartandó forrást.')
+            previous['local_root'] = previous.get('local_root') or row.get('local_root', '')
+            if row.get('id') in original_remote_ids and previous.get('id') not in original_remote_ids:
+                previous['remote_root'] = row['remote_root']
+                previous['id'] = row['id']
+        else:
+            result.append(row)
+    return clean_records(result)
+
+
 def records_from_settings(settings, libraries):
     pairs = parse_pairs(settings.get('paired_sources', []))
     router = SourceRouter(pairs)
@@ -89,7 +120,7 @@ def records_from_settings(settings, libraries):
                 records.append(dict(id=uuid.uuid4().hex, library_id=identifier,
                     local_root='' if canonical.startswith('syno://') else path,
                     remote_root=canonical if canonical.startswith('syno://') else ''))
-    return records
+    return unify_records(records, settings)
 
 
 def suggested_pair(records):
@@ -121,24 +152,20 @@ class SourceFolderDialog(QDialog):
         self.row = dict(row)
         self.t, self.text_prompt = translate, text_prompt
         self.setWindowTitle(translate('Forrásmappa'))
-        self.resize(700, 330)
+        self.resize(700, 280)
         layout = QVBoxLayout(self)
-        intro = QLabel(translate('Tallózd be a mappát ezen a gépen vagy a NAS-on. Ugyanahhoz a mappához mindkét elérést is megadhatod.'))
+        intro = QLabel(translate('Válaszd ki egyszer a forrásmappát. NAS-mappánál a helyi hálózatot, a DDNS-t és a QuickConnectet automatikusan kezeljük.'))
         intro.setWordWrap(True); layout.addWidget(intro)
-        form = QFormLayout(); layout.addLayout(form)
-        self.local = QLineEdit(row.get('local_root', '')); self.local.setReadOnly(True)
-        self.remote = QLineEdit(row.get('remote_root', '')); self.remote.setReadOnly(True)
-        edit_menu(self.local); edit_menu(self.remote)
-        for field, label, button_text, browser in (
-            (self.local, 'Ezen a gépen / helyi hálózaton:', 'Helyi mappa tallózása…', browse_local),
-            (self.remote, 'A NAS-on:', 'NAS-mappa tallózása…', browse_nas)):
-            widget = QWidget(); line = QHBoxLayout(widget); line.setContentsMargins(0,0,0,0)
-            line.addWidget(field, 1)
-            browse = QPushButton(translate(button_text)); line.addWidget(browse)
-            browse.clicked.connect(lambda _=False, f=field, b=browser: self.browse(f, b))
-            clear = QPushButton(translate('Törlés')); line.addWidget(clear); clear.clicked.connect(field.clear)
-            form.addRow(translate(label), widget)
-        note = QLabel(translate('Ha mindkét elérés meg van adva, az elérhető helyi hálózati kapcsolatot használjuk, egyébként a NAS-kapcsolatot. Csak ugyanannak a mappának a két elérését válaszd ki.'))
+        self.local = QLineEdit(row.get('local_root', ''), self); self.local.hide()
+        self.remote = QLineEdit(row.get('remote_root', ''), self); self.remote.hide()
+        self.path = QLineEdit(row.get('remote_root') or row.get('local_root', ''))
+        self.path.setReadOnly(True); edit_menu(self.path); layout.addWidget(self.path)
+        controls = QHBoxLayout(); layout.addLayout(controls)
+        for field, label, browser in ((self.remote, 'NAS-mappa tallózása…', browse_nas),
+                                      (self.local, 'Helyi mappa tallózása…', browse_local)):
+            button = QPushButton(translate(label)); controls.addWidget(button)
+            button.clicked.connect(lambda _=False, f=field, b=browser:self.browse(f, b))
+        note = QLabel(translate('A NAS elérési címeit a Beállítások / NAS-kapcsolat alatt lehet egyszer megadni. Az ezen a gépen tárolt mappák továbbra is külön használhatók.'))
         note.setWordWrap(True); layout.addWidget(note)
         manual = QPushButton(translate('Útvonal megadása kézzel…')); layout.addWidget(manual)
         manual.clicked.connect(self.manual)
@@ -148,15 +175,20 @@ class SourceFolderDialog(QDialog):
         buttons.addButton(translate('Mégse'), QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept); buttons.rejected.connect(self.reject); layout.addWidget(buttons)
 
+    def _select(self, field, value):
+        if value == self.path.text(): return
+        self.local.clear(); self.remote.clear()
+        field.setText(value); self.path.setText(value); self.error.clear()
+
     def browse(self, field, browser):
         value = browser(self)
-        if value: field.setText(value); self.error.clear()
+        if value: self._select(field, value)
 
     def manual(self):
         value, ok = self.text_prompt(self, self.t('Útvonal megadása'), self.t('Helyi, hálózati vagy syno:/// mappaútvonal:'))
         if ok and value.strip():
-            field = self.remote if value.strip().startswith(('syno://', '/')) else self.local
-            field.setText(value.strip().strip('"'))
+            value = value.strip().strip('"')
+            self._select(self.remote if value.startswith(('syno://', '/')) else self.local, value)
 
     def accept(self):
         try:
@@ -166,8 +198,9 @@ class SourceFolderDialog(QDialog):
 
 
 class SourceFoldersDialog(QDialog):
-    def __init__(self, parent, records, libraries, save, browse_local, browse_nas, translate=lambda s:s, selected=None, edit_menu=lambda w:None, text_prompt=QInputDialog.getText):
+    def __init__(self, parent, records, libraries, save, browse_local, browse_nas, translate=lambda s:s, selected=None, edit_menu=lambda w:None, text_prompt=QInputDialog.getText, settings=None):
         super().__init__(parent)
+        self.settings = settings or (lambda: {})
         self.values = copy.deepcopy(records)
         self._pending_save = None
         self._save_timer = QTimer(self)
@@ -178,7 +211,7 @@ class SourceFoldersDialog(QDialog):
         self.setWindowTitle(translate('Médiatárak – forrásmappák'))
         self.resize(880, 560); self.setMinimumSize(720, 440)
         layout = QVBoxLayout(self)
-        intro = QLabel(translate('Válassz médiatárat, majd tallózással adj hozzá forrásmappát. A helyi és a NAS-elérés egy sorban kezelhető.'))
+        intro = QLabel(translate('Válassz médiatárat, majd tallózással adj hozzá forrásmappát. Minden mappát egyszer adj hozzá; a NAS-kapcsolatot automatikusan választjuk ki.'))
         intro.setWordWrap(True); layout.addWidget(intro)
         self.library = QComboBox()
         for identifier, name in libraries: self.library.addItem(name, identifier)
@@ -208,10 +241,8 @@ class SourceFoldersDialog(QDialog):
         self.indices = [i for i,row in enumerate(self.values) if row['library_id'] == self.library.currentData()]
         for index in self.indices:
             row = self.values[index]
-            parts = []
-            if row.get('local_root'): parts.append(self.t('Helyi:') + ' ' + row['local_root'])
-            if row.get('remote_root'): parts.append(self.t('NAS:') + ' ' + row['remote_root'])
-            self.listing.addItem('\n'.join(parts))
+            root = row.get('remote_root') or row.get('local_root', '')
+            self.listing.addItem(self.t('NAS:') + ' ' + root[7:] if root.startswith('syno://') else self.t('Helyi:') + ' ' + root)
         self.selection_changed(-1)
 
     def edit_folder(self, existing):
@@ -225,7 +256,7 @@ class SourceFoldersDialog(QDialog):
             proposed = copy.deepcopy(self.values)
             if index is None: proposed.append(dialog.row)
             else: proposed[index] = dialog.row
-            self.values = clean_records(proposed)
+            self.values = unify_records(proposed, self.settings())
             self.error.clear(); self.refresh()
         except ValueError as error: self.error.setText(self.t(str(error)))
         finally: dialog.deleteLater()
@@ -237,7 +268,7 @@ class SourceFoldersDialog(QDialog):
     def accept(self):
         if self._pending_save is not None: return
         try:
-            proposed = clean_records(self.values)
+            proposed = unify_records(self.values, self.settings())
             while (match := suggested_pair(proposed)) is not None:
                 local, remote = (proposed[index] for index in match)
                 answer = QMessageBox.question(self, self.t('Ugyanaz a forrásmappa?'),

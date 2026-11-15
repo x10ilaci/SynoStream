@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 _data = tempfile.TemporaryDirectory(prefix='synostream-tests-')
 os.environ['SYNOSTREAM_DATA_DIR'] = _data.name
-spec = importlib.util.spec_from_file_location('synostream_app', ROOT / 'SynoStream_1.99.py')
+spec = importlib.util.spec_from_file_location('synostream_app', ROOT / 'SynoStream_1.102.py')
 app_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app_module)
 
