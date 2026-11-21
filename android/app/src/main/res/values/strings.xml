@@ -439,4 +439,26 @@
     <string name="update_permission_open">Open settings</string>
     <string name="update_permission_denied">Installation permission was not granted. You can try again from Settings.</string>
     <string name="update_installer_error">Android could not open the installer. Try again from Settings.</string>
+
+    <string name="rec_title">Recommendations</string>
+    <string name="rec_discover">Discover</string>
+    <string name="rec_interested">Interested</string>
+    <string name="rec_hidden">Hidden</string>
+    <string name="rec_next">New recommendations</string>
+    <string name="rec_credit">Recommendations and posters: TMDB</string>
+    <string name="rec_error">Recommendations could not be loaded. Try again.</string>
+    <string name="rec_key">Set your TMDB API key in Settings to use recommendations.</string>
+    <string name="rec_no_seeds">Identify a few titles in this library first to get recommendations.</string>
+    <string name="rec_partial">Some requests failed. Available recommendations are shown; you can retry.</string>
+    <string name="rec_loading">Finding recommendations…</string>
+    <string name="rec_empty">No titles here yet. Try a new selection.</string>
+    <string name="rec_info">Based on this library. Titles you own in any library are excluded.</string>
+    <string name="rec_reason">Because you have: %1$s</string>
+    <string name="rec_hu_badge">Hungarian metadata</string>
+    <string name="rec_details">Details</string>
+    <string name="rec_restore">Restore</string>
+    <string name="rec_dismiss">Not interested</string>
+    <string name="rec_tmdb">Open on TMDB</string>
+    <string name="rec_prefer_hu">Prefer Hungarian metadata</string>
+    <string name="rec_hu_notice">Prefers verified Hungarian TMDB descriptions. This does not confirm Hungarian dubbing.</string>
 </resources>

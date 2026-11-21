@@ -2,13 +2,13 @@
   "format": 1,
   "platform": "android",
   "application_id": "hu.synostream.android",
-  "version": "0.5.19",
-  "version_code": 24,
+  "version": "0.5.20",
+  "version_code": 25,
   "min_sdk": 26,
-  "filename": "SynoStream_Android_0.5.19.apk",
-  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.19/SynoStream_Android_0.5.19.apk",
-  "sha256": "2bcbae4f78a4ea926cfb8665b7e8f737951c71b73a54ed177e2eb894dd33c16f",
-  "size": 1242537,
+  "filename": "SynoStream_Android_0.5.20.apk",
+  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.20/SynoStream_Android_0.5.20.apk",
+  "sha256": "56892e856dbfc50a4df30164b676e6031a8a56b6375f9fa6cf0fe00652ac8c47",
+  "size": 1284281,
   "signing_certificate_sha256": "993702ff90412c5aefcb43797d67adccb7bcdf62969f215fb92e9a5c52bca857",
-  "notes": "# Változások – 0.5.19\n\n- Kézi frissítéskeresés a Beállításokban.\n- Kapcsolható, alapból bekapcsolt automatikus ellenőrzés indításkor.\n- Új verzió és változáslista megjelenítése, Frissítés és telepítés / Később lehetőséggel.\n- Letöltési haladás, APK-ellenőrzés és Android-telepítő megnyitása.\n- Telepítési engedélyhez vezető rendszerbeállítás és visszatérés utáni folytatás.\n- Korlátozott, csak frissítési fájlokat megosztó FileProvider; nincs általános tárhelyengedély.\n- A NAS-, torrent- és médiatárkezelés szabályai megmaradtak.\n"
+  "notes": "# Változások – 0.5.20\n\n- A Mappa szerint lap helyén új Ajánló, a Windows-változat fő ajánlási szabályaival.\n- Külön válogatás médiatáranként, filmekhez és sorozatokhoz; meglévő tartalom kiszűrése minden médiatárból.\n- Változó ajánláscsomagok, Érdekel és Nem érdekel visszajelzés, mentett és elrejtett listák, visszaállítás.\n- A mentett érdeklődés új ajánlásokhoz is adhat kiindulópontot.\n- Magyar adatlapok előnyben beállítás, ellenőrzött TMDB-fordításokkal.\n- Gyorsítótár, részleges eredménymegjelenítés és korlátozott párhuzamos hálózati lekérés.\n- A keresés visszavált a médiatárra; az Ajánló frissítőgombja új válogatást kér.\n- A 0.5.19-ben bevezetett kézi/automatikus GitHub-frissítés megmaradt.\n"
 }

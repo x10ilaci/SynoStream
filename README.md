@@ -3,7 +3,7 @@
 ## Letöltések
 
 - [Windows 1.104](https://github.com/x10ilaci/SynoStream/releases/tag/v1.104)
-- [Android 0.5.19 APK és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.19)
+- [Android 0.5.20 APK és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.20)
 
 Az Android forrása az `android/` mappában található. A mobilos frissítési csatorna leírása: [android/UPDATE_CHANNEL.md](android/UPDATE_CHANNEL.md). A 0.5.19-től kézi és indításkori automatikus frissítésellenőrzés is elérhető; elfogadás után az app letölti, ellenőrzi az APK-t és megnyitja az Android telepítőjét.
 

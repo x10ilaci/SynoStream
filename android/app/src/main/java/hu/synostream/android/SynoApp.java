@@ -29,7 +29,7 @@ public final class SynoApp extends Application {
         }
         main.removeCallbacks(automaticTick);main.postDelayed(automaticTick,automaticLibraries.waiting()?1000:15000);
     }
-    private List<Library.Card> previousLibraryCards(JSONObject library,String owner)throws Exception{
+    List<Library.Card> previousLibraryCards(JSONObject library,String owner)throws Exception{
         List<Library.Card> result=new ArrayList<>();synchronized(cacheLock){AtomicFile file=new AtomicFile(cacheFile(library,owner));if(file.getBaseFile().exists()){
             try(InputStream input=file.openRead()){JSONArray saved=new JSONArray(new String(NasClient.readBounded(input,20*1024*1024),StandardCharsets.UTF_8));for(int i=0;i<saved.length();i++)result.add(Library.Card.from(saved.getJSONObject(i)));}
         }}return result;

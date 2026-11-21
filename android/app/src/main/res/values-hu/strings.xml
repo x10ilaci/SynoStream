@@ -438,4 +438,26 @@
     <string name="update_permission_open">Beállítás megnyitása</string>
     <string name="update_permission_denied">A telepítési engedély nincs megadva. A Beállításokból újra próbálhatod.</string>
     <string name="update_installer_error">Az Android telepítője nem indítható. Próbáld újra a Beállításokból.</string>
+
+    <string name="rec_title">Ajánló</string>
+    <string name="rec_discover">Fedezz fel</string>
+    <string name="rec_interested">Érdekel</string>
+    <string name="rec_hidden">Elrejtve</string>
+    <string name="rec_next">Új ajánlások</string>
+    <string name="rec_credit">Ajánlások és plakátok: TMDB</string>
+    <string name="rec_error">Az ajánlások nem tölthetők be. Próbáld újra.</string>
+    <string name="rec_key">Az Ajánlóhoz add meg a TMDB API-kulcsodat a Beállításokban.</string>
+    <string name="rec_no_seeds">Az ajánlásokhoz előbb legyen néhány azonosított műsor ebben a médiatárban.</string>
+    <string name="rec_partial">Néhány lekérés sikertelen. Az elérhető ajánlások láthatók; újrapróbálhatod.</string>
+    <string name="rec_loading">Ajánlások keresése…</string>
+    <string name="rec_empty">Itt még nincs megjeleníthető cím. Kérj új válogatást.</string>
+    <string name="rec_info">Ehhez a médiatárhoz válogatva. A más médiatárakban már meglévő címeket is kiszűrjük.</string>
+    <string name="rec_reason">Ez alapján: %1$s</string>
+    <string name="rec_hu_badge">Magyar adatlap</string>
+    <string name="rec_details">Részletek</string>
+    <string name="rec_restore">Visszaállítás</string>
+    <string name="rec_dismiss">Nem érdekel</string>
+    <string name="rec_tmdb">Megnyitás a TMDB-n</string>
+    <string name="rec_prefer_hu">Magyar adatlapok előnyben</string>
+    <string name="rec_hu_notice">A TMDB-n ellenőrzött magyar leírásokat részesíti előnyben. Ez nem igazolja a magyar szinkront.</string>
 </resources>

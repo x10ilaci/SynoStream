@@ -1,14 +1,12 @@
-# Ellenőrzés – Android 0.5.19
+# Ellenőrzés – Android 0.5.20
 
 2026-11-21
 
-- JVM: 588 teszt, 0 hiba/kihagyás; ebből 8 új frissítési/protokollteszt. Lint: 0 hiba / 17 korábbi figyelmeztetés.
-- Az APK és az instrumentációs csomag offline fordítása sikeres.
-- API 36 emulátoron 17 célzott próba: 5 új ellenőrzés (verzió/aláírás, szűkített fájlmegosztás, beállításkapcsoló, telepítő-intent, egyszeri automatikus és kézi ellenőrzés) és 12 korábbi NAS-törlési/torrent-/médiatár-regresszió.
-- Külön, tiltott telepítési engedéllyel 1 sikeres beállításmegnyitási próba. Az engedély módosítása folyamaton kívül történt, mert Android az engedély visszavonásakor leállíthatja a folyamatot. A rendszer nagybetűs gombszövege miatt a teszt kis-/nagybetűtől független keresést használ.
-- Külön 2 sikeres próba: valódi nyilvános GitHub-feed és APK letöltése az app Java hálózati kódjával, valamint ellenőrzőösszeg/aláírás elutasítása hibás adatoknál.
-- A frissítővel egy 23-as verziókódú, ugyanebből a forrásból fordított tesztalapról az Android rendszertelepítőjével ténylegesen felment a végleges, 24-es verziókódú APK. A telepítés után a tesztadat megmaradt. A teszt nem valódi felhasználói profilt használt.
-- A telepített, emulátorról visszaolvasott és kiadott APK byte-azonos. Az aláírás megegyezik az előző kiadáséval.
-- A félbehagyott, túl nagy, sérült letöltések, hibás metaadatok és nem engedélyezett URL-ek kezelése tesztelt. Valódi NAS-adatok törlése nem történt.
-- Fizikai telefonos és minden Android-verzióra kiterjedő telepítési próba nem történt. A rendszer felhasználói jóváhagyását az app nem kerüli meg.
-- A forrás-ZIP build/adat/privát aláírókulcs nélküli; integritás és személyes titkok vizsgálata külön ellenőrzött.
+- JVM: 600 teszt, 0 hiba/kihagyás; 12 új ajánlási teszt. Lint: 0 hiba / 17 korábbi figyelmeztetés.
+- API 36 emulátoron 15 célzott próba: három új Ajánló-folyamat és a 12 korábbi NAS-törlési/torrent-/médiatár-regresszió.
+- Ellenőrzött: meglévő TMDB-azonosítók kizárása más médiatárból is; mentett érdeklődés megőrzése és médiatárak elkülönítése; új csomag ismétlés nélkül elegendő jelölt mellett; Vissza gomb a médiatárhoz; hiányzó API-kulcs üzenete.
+- Unit szinten: típusazonosság, cache és lejárat/nyelvi elválasztás, pozitív/negatív visszajelzés és visszaállítás, részleges hálózati hiba, megszakítás, üres találat cache-elése, legfeljebb 4 párhuzamos kérés, magyar fordítás ellenőrzése, már meglévő címek kihagyása a nyelvi ellenőrzésből.
+- Az emulátor kezdeti System UI ANR-ablaka és egy tesztben rögzített hibás médiatár-azonosító javítása után a végső célzott újrafuttatás sikeres.
+- A fő APK és a telepített példány byte-egyezése, az aláírás folytonossága, ZIP/SHA256 integritás és személyes titkoktól való mentesség külön ellenőrzött.
+- A felületi próbák mesterséges NAS/TMDB-adatokkal futottak; valódi NAS-törlés és fizikai telefonos próba nem történt.
+- A közzétett GitHub-kiadásból a 0.5.19-es app frissítését a publikálás után külön ellenőrizzük; a nyilvános kiadási csatorna stabil Android update.json címe megmaradt.

@@ -1,9 +1,11 @@
-# SynoStream Android 0.5.19
+# SynoStream Android 0.5.20
 
-GitHub-alapú alkalmazásfrissítés. A Beállítások / Alkalmazásfrissítés részen kézi keresés és indításkori automatikus ellenőrzés található. Az automatikus ellenőrzés alapból bekapcsolt; folyamatindításonként egyszer ellenőriz, a kézi keresés bármikor használható.
+A médiatár Mind / Mappa szerint lapsorában a mappánkénti nézet helyét az Ajánló vette át. A Windows Ajánlójához hasonlóan a kiválasztott médiatár azonosított műsorai alapján kér TMDB-ajánlásokat. A más médiatárakban már meglévő címeket is kiszűri, TMDB-azonosító és médiatípus alapján.
 
-Újabb, kompatibilis verziónál megjelennek a változások. A Frissítés és telepítés gomb letölti és ellenőrzi az APK-t, majd megnyitja az Android telepítőjét. A rendszerben engedélyezni kell a SynoStream számára a telepítést, és a telepítés jóváhagyása szükséges. Nem kell eltávolítani az előző appot; a beállítások megmaradnak.
+Fedezz fel, Érdekel és Elrejtve listák; Új ajánlások gomb; részletek és TMDB-adatlap. A visszajelzések és az ismétlést csökkentő előzmények fiók-/médiatáranként külön mentődnek. Az érdeklődés új ajánlási kiindulópont is lehet. A kis készletből természetesen ismétlődhetnek címek.
 
-HTTPS/GitHub-eredet, verziókód, alkalmazásazonosító, méret, SHA256 és a telepített alkalmazás aláírása ellenőrzött. Hibás/hiányos/más aláírású csomagot nem telepít. Az alkalmazásfrissítés nem használ NAS-hitelesítést.
+A Beállításokban a Magyar adatlapok előnyben kapcsoló alapból bekapcsolt. A TMDB magyar fordításai közül ellenőrzi a magyar leírást; ez nem igazolja a magyar hangot vagy szinkront. Az Ajánlóhoz az appban beállított TMDB API-kulcs szükséges.
 
-Ezt a verziót a 0.5.18-ra még kézzel kell feltelepíteni; a következő frissítéseket már az app kezeli. Hosszú háttérbe küldés vagy az alkalmazásfolyamat leállítása megszakíthatja a letöltést; ilyen esetben a kézi keresésből újraindítható.
+Gyorsítótárazott ajánlások, körönként legfeljebb négy új médiatári kiindulópont és nyolc nyelvi ellenőrzés, legfeljebb négy párhuzamos hálózati kéréssel. A médiatárak fájlnevei, elérési útjai és NAS-hitelesítése nem kerülnek a TMDB-hez az ajánláskérésben.
+
+A 0.5.19-es alkalmazás frissítőjével telepíthető. A frissítés megtalálható indításkor vagy a Beállítások / Frissítés keresése gombbal; a telepítést az Androidban jóvá kell hagyni.
