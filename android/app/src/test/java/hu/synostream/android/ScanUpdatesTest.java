@@ -1,0 +1,7 @@
+package hu.synostream.android;
+import org.junit.Test;import static org.junit.Assert.*;import java.util.*;import java.util.concurrent.atomic.*;import org.json.*;
+public class ScanUpdatesTest {
+ @Test public void batchesAreSnapshotsAndDoNotContainExistingCards()throws Exception{Library.Card old=new Library.Card("/old","Old",true),fresh=new Library.Card("/new","Before",true);List<List<String>> sent=new ArrayList<>();AtomicLong time=new AtomicLong(1000);ScanUpdates u=new ScanUpdates(List.of(old),time::get,sent::add);u.offer(old);assertTrue(sent.isEmpty());u.offer(fresh);fresh.title="After";assertEquals("Before",new JSONObject(sent.get(0).get(0)).getString("title"));u.offer(fresh);assertEquals(1,sent.size());u.flush();assertEquals("After",new JSONObject(sent.get(1).get(0)).getString("title"));}
+ @Test public void repeatedStatusUpdatesAreThrottled(){AtomicLong t=new AtomicLong(1000);ScanUpdates u=new ScanUpdates(List.of(),t::get,b->{});int emitted=0;for(int i=1;i<=10000;i++)if(u.progress(i))emitted++;assertTrue(emitted<50);t.addAndGet(300);assertTrue(u.progress(10001));}
+ @Test public void oldSeasonRootsDoNotCreateDuplicateShowPreviews()throws Exception{Library.Card old=new Library.Card("/show/s1","Show",false);old.episodeRoots.add(old.path);Library.Card merged=new Library.Card("/show/s2","Show",false);merged.episodeRoots.addAll(List.of("/show/s1","/show/s2"));List<List<String>> sent=new ArrayList<>();ScanUpdates updates=new ScanUpdates(List.of(old),()->1000,sent::add);updates.offer(merged);updates.flush();assertTrue(sent.isEmpty());}
+}

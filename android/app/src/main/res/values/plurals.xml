@@ -1,0 +1,10 @@
+<resources>
+<plurals name="episode_count"><item quantity="one">%1$d episode</item><item quantity="other">%1$d episodes</item></plurals>
+<plurals name="task_count"><item quantity="one">%1$d task</item><item quantity="other">%1$d tasks</item></plurals>
+<plurals name="processed_count"><item quantity="one">%1$d title processed…</item><item quantity="other">%1$d titles processed…</item></plurals>
+<plurals name="cached_count"><item quantity="one">Previous list • %1$d title</item><item quantity="other">Previous list • %1$d titles</item></plurals>
+<plurals name="title_count"><item quantity="one">%1$d title</item><item quantity="other">%1$d titles</item></plurals>
+<plurals name="manual_count"><item quantity="one">%1$d manual entry</item><item quantity="other">%1$d manual entries</item></plurals>
+<plurals name="retry_count"><item quantity="one">%1$d to retry</item><item quantity="other">%1$d to retry</item></plurals>
+<plurals name="invalid_pairing_count"><item quantity="one">%1$d invalid pairing</item><item quantity="other">%1$d invalid pairings</item></plurals>
+</resources>

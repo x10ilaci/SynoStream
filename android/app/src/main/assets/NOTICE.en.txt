@@ -1,0 +1,14 @@
+Components and sources
+
+SynoStream is an independent Android implementation, GNU GPL-3.0-only; see LICENSE.txt.
+Recognition rules are based on the SynoStream Windows 1.86 synostream_logic.py and synostream_nfo.py modules. Original copyright: Copyright (C) 2026 Lőrincz László, GPL-3.0-only.
+No code, images or libraries from the DS video APK are included.
+
+AndroidX DrawerLayout and its dependencies and desugar_jdk_libs are separate open-source components. Licenses and sources:
+https://android.googlesource.com/platform/frameworks/support/ (Apache License 2.0)
+https://github.com/google/desugar_jdk_libs (Apache License 2.0 and the identified OpenJDK licenses)
+
+Metadata, when using your own API key: The Movie Database (TMDB), https://www.themoviedb.org/ . This product uses the TMDB API but is not endorsed or certified by TMDB.
+NAS connections use the DSM File Station API. Video Station is not required.
+
+The demo and included SynoStream screenshots show public TMDB movie data and images. Original DS video screenshots are not distributed.

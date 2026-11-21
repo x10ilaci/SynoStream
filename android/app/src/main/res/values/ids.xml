@@ -1,0 +1,25 @@
+<resources>
+    <item name="login_address" type="id"/><item name="login_local" type="id"/><item name="login_user" type="id"/>
+    <item name="login_password" type="id"/><item name="login_button" type="id"/><item name="demo_button" type="id"/>
+    <item name="poster_grid" type="id"/><item name="search_box" type="id"/><item name="menu_button" type="id"/>
+    <item name="page_title" type="id"/><item name="status_text" type="id"/><item name="play_button" type="id"/>
+    <item name="refresh_button" type="id"/><item name="drawer" type="id"/>
+<item name="episode_list" type="id"/><item name="configure_source" type="id"/><item name="library_name" type="id"/><item name="library_add_source" type="id"/><item name="library_save" type="id"/><item name="library_delete" type="id"/><item name="detail_close" type="id"/><item name="detail_info" type="id"/><item name="detail_hide" type="id"/><item name="detail_merge" type="id"/><item name="detail_unmerge" type="id"/><item name="metadata_query" type="id"/><item name="metadata_search" type="id"/><item name="metadata_results" type="id"/><item name="source_choose" type="id"/><item name="information_scroll" type="id"/><item name="legal_text" type="id"/><item name="login_address_help" type="id"/><item name="connection_toolbar" type="id"/><item name="connection_drawer" type="id"/><item name="connection_settings" type="id"/>
+    <item name="login_ddns" type="id"/>
+    <item name="login_quick" type="id"/>
+    <item name="login_connection_test" type="id"/>
+    <item name="settings_connection_edit" type="id"/>
+    <item name="profile_address" type="id"/>
+    <item name="profile_user" type="id"/>
+    <item name="profile_password" type="id"/>
+    <item name="profile_remember" type="id"/>
+    <item name="profile_more" type="id"/>
+    <item name="profile_local" type="id"/>
+    <item name="profile_ddns" type="id"/>
+    <item name="profile_quick" type="id"/>
+    <item name="profile_otp" type="id"/>
+    <item name="profile_test" type="id"/>
+    <item name="profile_save" type="id"/>
+    <item name="login_otp" type="id"/>
+    <item name="detail_delete" type="id"/><item name="confirm_media_delete" type="id"/>
+</resources>

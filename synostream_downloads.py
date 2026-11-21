@@ -127,6 +127,7 @@ class DownloadStationClient(TorrentSelectionMixin, RemoteNASClient):
         tasks = []
         seen = set()
         offset = 0
+        reported = 0
         while True:
             data = self._task_request('list', readonly=True, offset=offset, limit=100,
                                       additional='detail,transfer')
@@ -142,13 +143,13 @@ class DownloadStationClient(TorrentSelectionMixin, RemoteNASClient):
                 seen.add(identity)
             tasks.extend(batch)
             offset += len(batch)
-            total = int(data.get('total', offset))
-            if not batch and offset < total:
-                raise DownloadStationError('A NAS hiányos feladatlistát adott; a korábbi lista megmarad.')
-            if not batch or offset >= total:
+            reported = max(reported, int(data.get('total') or 0))
+            if not batch:
+                if offset < reported:
+                    raise DownloadStationError('A NAS hiányos feladatlistát adott; a korábbi lista megmarad.')
                 return tasks
-            if offset >= 10000:
-                raise DownloadStationError('A NAS több mint 10 000 feladatot adott vissza; szűkítsd a feladatlistát a NAS-on.')
+            if offset > 10000:
+                raise DownloadStationError('A NAS több mint 10 000 feladatot adott vissza.')
 
     def create(self, *, uri=None, torrent_file=None, destination=''):
         if bool(uri) == bool(torrent_file):

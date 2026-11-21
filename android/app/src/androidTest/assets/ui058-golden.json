@@ -1,0 +1,182 @@
+[
+  {
+    "language": "en",
+    "input": "A Download Station most nem érhető el. A korábbi lista megmaradt.",
+    "expected": "Download Station is unavailable. The previous list has been kept."
+  },
+  {
+    "language": "en",
+    "input": "A Download Station most nem érhető el. A korábbi lista megmaradt. [fixture]",
+    "expected": "Download Station is unavailable. The previous list has been kept. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A Download Station most nem érhető el. A korábbi lista megmaradt. [fixture]",
+    "expected": "A fixture: Download Station is unavailable. The previous list has been kept. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket.",
+    "expected": "The Download Station connection has closed. Reopen Downloads."
+  },
+  {
+    "language": "en",
+    "input": "A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket. [fixture]",
+    "expected": "The Download Station connection has closed. Reopen Downloads. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket. [fixture]",
+    "expected": "A fixture: The Download Station connection has closed. Reopen Downloads. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A Download Station-művelet nem sikerült (",
+    "expected": "The Download Station operation failed ("
+  },
+  {
+    "language": "en",
+    "input": "A Download Station-művelet nem sikerült ( [fixture]",
+    "expected": "The Download Station operation failed ( [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A Download Station-művelet nem sikerült ( [fixture]",
+    "expected": "A fixture: The Download Station operation failed ( [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A NAS HTTPS-tanúsítványa nem ellenőrizhető.",
+    "expected": "The NAS HTTPS certificate could not be verified."
+  },
+  {
+    "language": "en",
+    "input": "A NAS HTTPS-tanúsítványa nem ellenőrizhető. [fixture]",
+    "expected": "The NAS HTTPS certificate could not be verified. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A NAS HTTPS-tanúsítványa nem ellenőrizhető. [fixture]",
+    "expected": "A fixture: The NAS HTTPS certificate could not be verified. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A NAS a mappalista kérését elutasította (101; ",
+    "expected": "The NAS rejected the folder list request (101; "
+  },
+  {
+    "language": "en",
+    "input": "A NAS a mappalista kérését elutasította (101;  [fixture]",
+    "expected": "The NAS rejected the folder list request (101;  [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A NAS a mappalista kérését elutasította (101;  [fixture]",
+    "expected": "A fixture: The NAS rejected the folder list request (101;  [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A NAS címéhez HTTP- vagy HTTPS-kiszolgálócím szükséges, jelszó és útvonal nélkül.",
+    "expected": "Enter an HTTP or HTTPS server address without a password or path."
+  },
+  {
+    "language": "en",
+    "input": "A NAS címéhez HTTP- vagy HTTPS-kiszolgálócím szükséges, jelszó és útvonal nélkül. [fixture]",
+    "expected": "Enter an HTTP or HTTPS server address without a password or path. [fixture]"
+  },
+  {
+    "language": "en",
+    "input": "A fixture: A NAS címéhez HTTP- vagy HTTPS-kiszolgálócím szükséges, jelszó és útvonal nélkül. [fixture]",
+    "expected": "A fixture: Enter an HTTP or HTTPS server address without a password or path. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The Download Station connection has closed. Reopen Downloads.",
+    "expected": "A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket."
+  },
+  {
+    "language": "hu",
+    "input": "The Download Station connection has closed. Reopen Downloads. [fixture]",
+    "expected": "A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The Download Station connection has closed. Reopen Downloads. [fixture]",
+    "expected": "The fixture: A Download Station-kapcsolat lezárult. Nyisd meg újra a Letöltéseket. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The Download Station operation failed (",
+    "expected": "A Download Station-művelet nem sikerült ("
+  },
+  {
+    "language": "hu",
+    "input": "The Download Station operation failed ( [fixture]",
+    "expected": "A Download Station-művelet nem sikerült ( [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The Download Station operation failed ( [fixture]",
+    "expected": "The fixture: A Download Station-művelet nem sikerült ( [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The NAS HTTPS certificate could not be verified.",
+    "expected": "A NAS HTTPS-tanúsítványa nem ellenőrizhető."
+  },
+  {
+    "language": "hu",
+    "input": "The NAS HTTPS certificate could not be verified. [fixture]",
+    "expected": "A NAS HTTPS-tanúsítványa nem ellenőrizhető. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The NAS HTTPS certificate could not be verified. [fixture]",
+    "expected": "The fixture: A NAS HTTPS-tanúsítványa nem ellenőrizhető. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The NAS rejected the folder list request (101; ",
+    "expected": "A NAS a mappalista kérését elutasította (101; "
+  },
+  {
+    "language": "hu",
+    "input": "The NAS rejected the folder list request (101;  [fixture]",
+    "expected": "A NAS a mappalista kérését elutasította (101;  [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The NAS rejected the folder list request (101;  [fixture]",
+    "expected": "The fixture: A NAS a mappalista kérését elutasította (101;  [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The NAS returned an incomplete folder list.",
+    "expected": "A NAS hiányos mappalistát adott."
+  },
+  {
+    "language": "hu",
+    "input": "The NAS returned an incomplete folder list. [fixture]",
+    "expected": "A NAS hiányos mappalistát adott. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The NAS returned an incomplete folder list. [fixture]",
+    "expected": "The fixture: A NAS hiányos mappalistát adott. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The NAS requires a two-step verification code, or the code has expired.",
+    "expected": "A NAS kétlépcsős belépési kódot kér, vagy a megadott kód lejárt."
+  },
+  {
+    "language": "hu",
+    "input": "The NAS requires a two-step verification code, or the code has expired. [fixture]",
+    "expected": "A NAS kétlépcsős belépési kódot kér, vagy a megadott kód lejárt. [fixture]"
+  },
+  {
+    "language": "hu",
+    "input": "The fixture: The NAS requires a two-step verification code, or the code has expired. [fixture]",
+    "expected": "The fixture: A NAS kétlépcsős belépési kódot kér, vagy a megadott kód lejárt. [fixture]"
+  }
+]

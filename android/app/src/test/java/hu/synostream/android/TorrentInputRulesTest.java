@@ -1,0 +1,10 @@
+package hu.synostream.android;
+import org.junit.Test;import static org.junit.Assert.*;
+public class TorrentInputRulesTest {
+ @Test public void onlyContentProvidersAreAccepted(){assertTrue(TorrentInputRules.acceptsScheme("content"));assertTrue(TorrentInputRules.acceptsScheme("CONTENT"));for(String value:new String[]{null,"","file","FILE","http","https"," content"})assertFalse(TorrentInputRules.acceptsScheme(value));}
+ @Test public void torrentDictionarySniffRejectsUnrelatedContent(){assertTrue(TorrentInputRules.looksLikeTorrent("d4:infod6:lengthi1e4:name7:Fixtureee".getBytes(java.nio.charset.StandardCharsets.US_ASCII)));assertFalse(TorrentInputRules.looksLikeTorrent(null));for(String value:new String[]{"","d4:infoe","<?xml version=\"1.0\"?><torrent/>","{\"info\":{\"name\":\"example\"}}","dthis is just garbage with no dictionary","1234567890123456"})assertFalse(value,TorrentInputRules.looksLikeTorrent(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));byte[] random=new byte[200];new java.util.Random(581).nextBytes(random);assertFalse(TorrentInputRules.looksLikeTorrent(random));}
+
+ @Test public void fileNamesAndSpecificMimeAreRecognized(){assertTrue(TorrentInputRules.accepts("Example.TORRENT","application/octet-stream"));assertTrue(TorrentInputRules.accepts("download","application/x-bittorrent"));assertTrue(TorrentInputRules.accepts(null,"APPLICATION/X-TORRENT"));assertEquals("download.torrent",TorrentInputRules.filename("download","application/x-bittorrent"));assertEquals("Example.TORRENT",TorrentInputRules.filename("Example.TORRENT",null));}
+ @Test public void unrelatedBinaryAndDocumentsAreRejected(){for(String name:new String[]{"other.bin","photo.jpg","archive.zip","document.pdf"})assertFalse(TorrentInputRules.accepts(name,"application/octet-stream"));assertFalse(TorrentInputRules.accepts(null,null));}
+ @Test(expected=IllegalArgumentException.class) public void invalidFileCannotGetTorrentName(){TorrentInputRules.filename("other.bin","application/octet-stream");}
+}

@@ -444,7 +444,7 @@ class DownloadPage(QWidget):
         for column in range(1, 6):
             self.table.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
         self.table.setItemDelegateForColumn(2, ProgressDelegate(self.table))
-        self.table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.AscendingOrder)
+        self.table.horizontalHeader().setSortIndicator(1, Qt.SortOrder.AscendingOrder)
         self.table.setSortingEnabled(True)
         self.table.itemSelectionChanged.connect(self.update_controls)
         layout.addWidget(self.table, 1)
@@ -657,7 +657,9 @@ class DownloadPage(QWidget):
                 speed = number(transfer.get('speed_download'))
                 total, downloaded = number(task.get('size')), number(transfer.get('size_downloaded'))
                 remaining = max(0, total - downloaded) / speed if task.get('status') == 'downloading' and speed > 0 and total > downloaded else float('inf')
-                keys = (values[0].casefold(), values[1].casefold(), 100 if is_complete(task) else min(100, 100 * downloaded / total) if total else 0,
+                detail = (task.get('additional') or {}).get('detail') or {}
+                state_rank = {'downloading':0,'finishing':1,'waiting':2,'hash_checking':3,'seeding':4,'finished':5,'paused':6,'error':7}.get(task.get('status'),8)
+                keys = (values[0].casefold(), (state_rank,-number(detail.get('create_time')),values[1].casefold()), 100 if is_complete(task) else min(100, 100 * downloaded / total) if total else 0,
                         speed, number(transfer.get('speed_upload')), remaining)
                 for column, value in enumerate(values):
                     item = TaskItem(value)

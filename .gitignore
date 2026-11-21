@@ -19,3 +19,11 @@ dist/
 
 .pytest_cache/
 *.spec
+
+# Android build state and signing material
+.gradle/
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks

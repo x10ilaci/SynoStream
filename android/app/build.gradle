@@ -1,0 +1,29 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'hu.synostream.android'
+    compileSdk 36
+    compileSdkExtension 19
+    buildToolsVersion '36.1.0'
+    defaultConfig {
+        applicationId 'hu.synostream.android'
+        minSdk 26
+        targetSdk 36
+        versionCode 23
+        versionName '0.5.18'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    signingConfigs { debug { storeFile file(System.getProperty("user.home") + "/.android/debug.keystore") } }
+    buildFeatures { buildConfig true }
+    bundle { language { enableSplit = false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17; coreLibraryDesugaringEnabled true }
+    testOptions { unitTests.returnDefaultValues = false }
+}
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+}

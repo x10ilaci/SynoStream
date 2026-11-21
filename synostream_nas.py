@@ -339,6 +339,43 @@ class RemoteNASClient:
                     raise RuntimeError(f"A párosítás nem olvasható a NAS-ról (DSM: {code}).")
                 return bytes(content)
 
+    def delete_paths(self, paths):
+        import json
+        from synostream_deletion import path, blocked
+        self._check_cancelled()
+        values = [path(value) for value in paths]
+        if not values or len(values)>64 or any(len(value.strip('/').split('/'))<2 or blocked(value) for value in values): raise ValueError('Érvénytelen törlési fájllista.')
+        api = 'SYNO.FileStation.Delete'
+        with self.lock:
+            if api not in self.api_info:
+                response=self._connect_request('get',self.base_url+'/webapi/query.cgi',params={
+                    'api':'SYNO.API.Info','version':1,'method':'query','query':api},timeout=(8,15))
+                try:
+                    payload=response.json();info=(payload.get('data') or {}).get(api)
+                    if not payload.get('success') or not info:raise RuntimeError('A NAS nem támogatja a fájltörlést.')
+                    self.api_info[api]=info
+                finally:response.close()
+            for attempt in range(2):
+                self._check_cancelled()
+                info=self.api_info[api]
+                if int(info.get('maxVersion',0))<2:raise RuntimeError('A NAS nem támogatja ezt a törlési műveletet.')
+                try:
+                    response=self._post(self._endpoint(info['path']),data={'api':api,'version':2,'method':'delete',
+                        'path':json.dumps(values,ensure_ascii=False),'recursive':'false','_sid':self.sid},timeout=(8,60))
+                    try:response.raise_for_status();payload=response.json()
+                    finally:response.close()
+                except (requests.RequestException, ValueError, TypeError):
+                    raise RuntimeError('A NAS-törlés eredménye nem igazolható. Frissítsd a médiatárat; nem ismételtem meg a műveletet.') from None
+                if not isinstance(payload,dict):raise RuntimeError('A NAS-törlés nem adott egyértelmű visszaigazolást.')
+                if payload.get('success'):
+                    data=payload.get('data') or {}
+                    if isinstance(data,dict) and data.get('errors'):raise RuntimeError('A NAS néhány fájlt nem tudott törölni. Frissítsd a médiatárat.')
+                    return
+                code=(payload.get('error') or {}).get('code')
+                if code in (106,107,119) and attempt==0:
+                    self.connect();continue  # Explicit rejection means the write never ran.
+                raise RuntimeError('NAS-törlési hiba (DSM: %s). A műveletet nem ismételtem meg.' % code)
+
     def upload_pairing(self, directory, name, payload):
         """Publish one private UUID event; an uncertain write is retried only later."""
         import re

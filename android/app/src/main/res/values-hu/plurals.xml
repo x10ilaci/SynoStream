@@ -1,0 +1,10 @@
+<resources>
+<plurals name="episode_count"><item quantity="one">%1$d epizód</item><item quantity="other">%1$d epizód</item></plurals>
+<plurals name="task_count"><item quantity="one">%1$d feladat</item><item quantity="other">%1$d feladat</item></plurals>
+<plurals name="processed_count"><item quantity="one">%1$d műsor feldolgozva…</item><item quantity="other">%1$d műsor feldolgozva…</item></plurals>
+<plurals name="cached_count"><item quantity="one">Korábbi lista • %1$d műsor</item><item quantity="other">Korábbi lista • %1$d műsor</item></plurals>
+<plurals name="title_count"><item quantity="one">%1$d műsor</item><item quantity="other">%1$d műsor</item></plurals>
+<plurals name="manual_count"><item quantity="one">%1$d kézi bejegyzés</item><item quantity="other">%1$d kézi bejegyzés</item></plurals>
+<plurals name="retry_count"><item quantity="one">%1$d újrapróbálandó</item><item quantity="other">%1$d újrapróbálandó</item></plurals>
+<plurals name="invalid_pairing_count"><item quantity="one">%1$d hibás párosítás</item><item quantity="other">%1$d hibás párosítás</item></plurals>
+</resources>

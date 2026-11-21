@@ -1,0 +1,2092 @@
+{
+  "source": "SynoStream Windows 1.86 pure parsing and matching rules",
+  "episodes": [
+    {
+      "path": "10 Things.mkv",
+      "season": 1,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "Barátok közt/2. évad/05. rész.mkv",
+      "season": 2,
+      "episode": 5,
+      "explicit": true
+    },
+    {
+      "path": "Mad Max 2/Mad Max 2.mkv",
+      "season": 1,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "One Piece/One.Piece.E101.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "One Piece/One.Piece.E201.mkv",
+      "season": 1,
+      "episode": 201,
+      "explicit": true
+    },
+    {
+      "path": "Show/0. évad/01. rész.mkv",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/0. évad/03. rész.mkv",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/0. évad/101. rész.mkv",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/0. évad/12. rész.mkv",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/0. évad/99. rész.mkv",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/01 - Pilot.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/1. évad/01. rész.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/1. évad/03. rész.mkv",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/1. évad/101. rész.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/1. évad/12. rész.mkv",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/1. évad/99. rész.mkv",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/12. évad/01. rész.mkv",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/12. évad/03. rész.mkv",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/12. évad/101. rész.mkv",
+      "season": 12,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/12. évad/12. rész.mkv",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/12. évad/99. rész.mkv",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/2. évad/01. rész.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/2. évad/03. rész.mkv",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/2. évad/101. rész.mkv",
+      "season": 2,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/2. évad/12. rész.mkv",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/2. évad/99. rész.mkv",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/8. évad/01. rész.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/8. évad/03. rész.mkv",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/8. évad/101. rész.mkv",
+      "season": 8,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/8. évad/12. rész.mkv",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/8. évad/99. rész.mkv",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/E001-E100.mkv",
+      "season": 1,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "Show/E101-E200/01.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/E101-E200/E001.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/E101-E200/E101.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/E101-E200/E150.mkv",
+      "season": 1,
+      "episode": 150,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/E001.mkv",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/E003.mkv",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/E012.mkv",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/E099.mkv",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/E101.mkv",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/Episode 1.avi",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/Episode 101.avi",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/Episode 12.avi",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/Episode 3.avi",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S00/Episode 99.avi",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/E001.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/E003.mkv",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/E012.mkv",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/E099.mkv",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/E101.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Episode 1.avi",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Episode 101.avi",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Episode 12.avi",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Episode 3.avi",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Episode 99.avi",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S01/Show - 05 [1080p].mkv",
+      "season": 1,
+      "episode": 5,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E001.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E003.mkv",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E012.mkv",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E099.mkv",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E101-E200/No number.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/E101.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Episode 1.avi",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Episode 101.avi",
+      "season": 2,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Episode 12.avi",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Episode 3.avi",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Episode 99.avi",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S02/Show.1280x720.mkv",
+      "season": 2,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "Show/S07/Show E710.mkv",
+      "season": 7,
+      "episode": 10,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/E001.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/E003.mkv",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/E012.mkv",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/E099.mkv",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/E101.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Episode 1.avi",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Episode 101.avi",
+      "season": 8,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Episode 12.avi",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Episode 3.avi",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Episode 99.avi",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S08/Show E801.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/E001.mkv",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/E003.mkv",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/E012.mkv",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/E099.mkv",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/E101.mkv",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/Episode 1.avi",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/Episode 101.avi",
+      "season": 12,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/Episode 12.avi",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/Episode 3.avi",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/S12/Episode 99.avi",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 00/Show.S00E001.mkv",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 00/Show.S00E003.mkv",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 00/Show.S00E012.mkv",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 00/Show.S00E099.mkv",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 00/Show.S00E101.mkv",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 01/Show.S01E001.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 01/Show.S01E003.mkv",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 01/Show.S01E012.mkv",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 01/Show.S01E099.mkv",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 01/Show.S01E101.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E001.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E003.mkv",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E012.mkv",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E03.mkv",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E099.mkv",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 02/Show.S02E101.mkv",
+      "season": 2,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 08/Show.S08E001.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 08/Show.S08E003.mkv",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 08/Show.S08E012.mkv",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 08/Show.S08E099.mkv",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 08/Show.S08E101.mkv",
+      "season": 8,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 1/01.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 1/Show E101.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 12/Show.S12E001.mkv",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 12/Show.S12E003.mkv",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 12/Show.S12E012.mkv",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 12/Show.S12E099.mkv",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 12/Show.S12E101.mkv",
+      "season": 12,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 2/Show Évad 12. rész.mkv",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 2019/Episode 4.mkv",
+      "season": 1,
+      "episode": 4,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 3/Episode 12.mkv",
+      "season": 3,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Season 4/2024-02-10.mkv",
+      "season": 4,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "Show/Show - 05.mkv",
+      "season": 1,
+      "episode": 5,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 0x01.mp4",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 0x03.mp4",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 0x101.mp4",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 0x12.mp4",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 0x99.mp4",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 12x01.mp4",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 12x03.mp4",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 12x101.mp4",
+      "season": 12,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 12x12.mp4",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 12x99.mp4",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 1x01.mp4",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 1x03.mp4",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 1x101.mp4",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 1x12.mp4",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 1x99.mp4",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 2x01.mp4",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 2x03.mp4",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 2x101.mp4",
+      "season": 2,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 2x12.mp4",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 2x99.mp4",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 3. évad 12. rész.mkv",
+      "season": 3,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 8x01.mp4",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 8x03.mp4",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 8x101.mp4",
+      "season": 8,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 8x12.mp4",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show 8x99.mp4",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show E1020.mkv",
+      "season": 10,
+      "episode": 20,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show E710.mkv",
+      "season": 7,
+      "episode": 10,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show Évad 3 Rész 12.mkv",
+      "season": 3,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Show.E1080p.mkv",
+      "season": 1,
+      "episode": 0,
+      "explicit": false
+    },
+    {
+      "path": "Show/Évad 0/01.mkv",
+      "season": 0,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 0/03.mkv",
+      "season": 0,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 0/101.mkv",
+      "season": 0,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 0/12.mkv",
+      "season": 0,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 0/99.mkv",
+      "season": 0,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 1/01.mkv",
+      "season": 1,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 1/03.mkv",
+      "season": 1,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 1/101.mkv",
+      "season": 1,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 1/12.mkv",
+      "season": 1,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 1/99.mkv",
+      "season": 1,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 12/01.mkv",
+      "season": 12,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 12/03.mkv",
+      "season": 12,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 12/101.mkv",
+      "season": 12,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 12/12.mkv",
+      "season": 12,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 12/99.mkv",
+      "season": 12,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 2/01.mkv",
+      "season": 2,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 2/03.mkv",
+      "season": 2,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 2/101.mkv",
+      "season": 2,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 2/12.mkv",
+      "season": 2,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 2/99.mkv",
+      "season": 2,
+      "episode": 99,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 3/01.mkv",
+      "season": 3,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 8/01.mkv",
+      "season": 8,
+      "episode": 1,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 8/03.mkv",
+      "season": 8,
+      "episode": 3,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 8/101.mkv",
+      "season": 8,
+      "episode": 101,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 8/12.mkv",
+      "season": 8,
+      "episode": 12,
+      "explicit": true
+    },
+    {
+      "path": "Show/Évad 8/99.mkv",
+      "season": 8,
+      "episode": 99,
+      "explicit": true
+    }
+  ],
+  "clean": [
+    {
+      "name": "The.Matrix.1999.1080p.BluRay.x264-GRP.mkv",
+      "title": "The Matrix",
+      "year": "1999"
+    },
+    {
+      "name": "Blade Runner 2049.mkv",
+      "title": "Blade Runner 2049",
+      "year": null
+    },
+    {
+      "name": "1917 2019.mp4",
+      "title": "1917",
+      "year": "2019"
+    },
+    {
+      "name": "Dune (2021) [WEB-DL].mkv",
+      "title": "Dune",
+      "year": "2021"
+    },
+    {
+      "name": "Season of the Witch (2011).mkv",
+      "title": "Season of the Witch",
+      "year": "2011"
+    },
+    {
+      "name": "Multi (2010).avi",
+      "title": "Multi",
+      "year": "2010"
+    },
+    {
+      "name": "Eng Kalandor (1999).mkv",
+      "title": "Eng Kalandor",
+      "year": "1999"
+    },
+    {
+      "name": "Attila the Hun (2001).mkv",
+      "title": "Attila the Hun",
+      "year": "2001"
+    },
+    {
+      "name": "Movie HDR DVDRip Xvid.mkv",
+      "title": "Movie",
+      "year": null
+    },
+    {
+      "name": "A Complete Unknown (2024).mkv",
+      "title": "A Complete Unknown",
+      "year": "2024"
+    },
+    {
+      "name": "Some.Show.S03E.WEB-DL.1080p.mkv",
+      "title": "Some Show",
+      "year": null
+    },
+    {
+      "name": "The.Complete.Truth.2019.1080p.mkv",
+      "title": "The Complete Truth",
+      "year": "2019"
+    },
+    {
+      "name": "A Complete Unknown (2024).mkv",
+      "title": "A Complete Unknown",
+      "year": "2024"
+    },
+    {
+      "name": "Ernest és Célestine S01E01 1080i.mkv",
+      "title": "Ernest és Célestine",
+      "year": null
+    },
+    {
+      "name": "Sen.to.Chihiro.no.kamikakushi.2001.720p.BluRay.mkv",
+      "title": "Sen to Chihiro no kamikakushi",
+      "year": "2001"
+    },
+    {
+      "name": "Macskak.Nem.Tancolhatnak.1997.BluRay.mkv",
+      "title": "Macskak Nem Tancolhatnak",
+      "year": "1997"
+    },
+    {
+      "name": "Susi.1955.HUN.1080p.mkv",
+      "title": "Susi",
+      "year": "1955"
+    }
+  ],
+  "matching": [
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "river",
+      "candidate": {
+        "id": 1,
+        "title": "River of No Return",
+        "original_title": "River of No Return",
+        "name": "River of No Return",
+        "original_name": "River of No Return",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Boku wa Kimi no Namida",
+        "original_title": "Boku wa Kimi no Namida",
+        "name": "Boku wa Kimi no Namida",
+        "original_name": "Boku wa Kimi no Namida",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "rio",
+      "candidate": {
+        "id": 1,
+        "title": "El Rio",
+        "original_title": "El Rio",
+        "name": "El Rio",
+        "original_name": "El Rio",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": true,
+      "score": 26.08278537031645
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": true,
+      "score": 28.08278537031645
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 26.08278537031645
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": true,
+      "score": 26.08278537031645
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": true,
+      "score": 28.08278537031645
+    },
+    {
+      "query": "boribon",
+      "candidate": {
+        "id": 1,
+        "title": "Boribonmesék",
+        "original_title": "Boribonmesék",
+        "name": "Boribonmesék",
+        "original_name": "Boribonmesék",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": true,
+      "score": 26.08278537031645
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": false,
+      "score": 4.082785370316451
+    },
+    {
+      "query": "kubo",
+      "candidate": {
+        "id": 1,
+        "title": "Kubo and the Two Strings",
+        "original_title": "Kubo and the Two Strings",
+        "name": "Kubo and the Two Strings",
+        "original_name": "Kubo and the Two Strings",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": false,
+      "score": 2.0827853703164503
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": true,
+      "score": 27.797071084602162
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": true,
+      "score": 29.797071084602162
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 27.797071084602162
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": true,
+      "score": 27.797071084602162
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": true,
+      "score": 29.797071084602162
+    },
+    {
+      "query": "Kimi no wa",
+      "candidate": {
+        "id": 1,
+        "title": "Kimi no Na wa",
+        "original_title": "Kimi no Na wa",
+        "name": "Kimi no Na wa",
+        "original_name": "Kimi no Na wa",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": true,
+      "score": 27.797071084602162
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": true,
+      "score": 29.775093062624144
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": true,
+      "score": 31.775093062624144
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 29.775093062624144
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": true,
+      "score": 29.775093062624144
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": true,
+      "score": 31.775093062624144
+    },
+    {
+      "query": "Even Mice Belong to Heaven",
+      "candidate": {
+        "id": 1,
+        "title": "Even Mice Belong in Heaven",
+        "original_title": "Even Mice Belong in Heaven",
+        "name": "Even Mice Belong in Heaven",
+        "original_name": "Even Mice Belong in Heaven",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": true,
+      "score": 29.775093062624144
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": true,
+      "score": 32.08278537031645
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": true,
+      "score": 34.08278537031645
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 32.08278537031645
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": true,
+      "score": 32.08278537031645
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": true,
+      "score": 34.08278537031645
+    },
+    {
+      "query": "A nagy pénzrablás",
+      "candidate": {
+        "id": 1,
+        "title": "Nagy penzrablas",
+        "original_title": "Nagy penzrablas",
+        "name": "Nagy penzrablas",
+        "original_name": "Nagy penzrablas",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": true,
+      "score": 32.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": true,
+      "reliable": true,
+      "score": 35.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": true,
+      "reliable": true,
+      "score": 37.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": true,
+      "reliable": false,
+      "score": 35.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": null,
+      "movie": false,
+      "reliable": true,
+      "score": 35.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "2020",
+      "movie": false,
+      "reliable": true,
+      "score": 37.08278537031645
+    },
+    {
+      "query": "Chihiro szellemorszagban",
+      "candidate": {
+        "id": 1,
+        "title": "Chihiro Szellemországban",
+        "original_title": "Chihiro Szellemországban",
+        "name": "Chihiro Szellemországban",
+        "original_name": "Chihiro Szellemországban",
+        "release_date": "2020-01-01",
+        "first_air_date": "2020-01-01",
+        "vote_count": 10
+      },
+      "year": "1980",
+      "movie": false,
+      "reliable": true,
+      "score": 35.08278537031645
+    }
+  ]
+}

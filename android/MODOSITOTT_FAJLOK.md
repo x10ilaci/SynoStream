@@ -1,0 +1,23 @@
+# Módosított fájlok
+
+- app/build.gradle
+- app/src/androidTest/java/hu/synostream/android/Android050FlowTest.java
+- app/src/androidTest/java/hu/synostream/android/Android0516Test.java
+- app/src/androidTest/java/hu/synostream/android/Android0518Test.java
+- app/src/androidTest/java/hu/synostream/android/FakeNas.java
+- app/src/main/java/hu/synostream/android/DeleteUi.java
+- app/src/main/java/hu/synostream/android/DetailUi.java
+- app/src/main/java/hu/synostream/android/LocalEdits.java
+- app/src/main/java/hu/synostream/android/MainActivity.java
+- app/src/main/java/hu/synostream/android/MediaDeletion.java
+- app/src/main/java/hu/synostream/android/NasClient.java
+- app/src/main/java/hu/synostream/android/ScanService.java
+- app/src/main/java/hu/synostream/android/SeriesUi.java
+- app/src/main/java/hu/synostream/android/SynoApp.java
+- app/src/main/res/values/ids.xml
+- app/src/main/res/values/strings.xml
+- app/src/main/res/values-hu/strings.xml
+- app/src/test/java/hu/synostream/android/MediaDeletionTest.java
+- ELLENORZES.md
+- README.md
+- VALTOZASOK.md

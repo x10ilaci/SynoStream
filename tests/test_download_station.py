@@ -165,7 +165,7 @@ def test_download_station_login_discovery_and_pagination(client):
     assert len(c.list_tasks()) == 205
     assert state['session_names'] == ['DownloadStation']
     assert 'SYNO.DownloadStation.Task' in state['query']
-    assert [call[1]['offset'][0] for call in state['calls'] if call[0] == 'read'] == ['0', '100', '200']
+    assert [call[1]['offset'][0] for call in state['calls'] if call[0] == 'read'] == ['0', '100', '200', '205']
 
 
 def test_download_station_renews_its_own_session(client):

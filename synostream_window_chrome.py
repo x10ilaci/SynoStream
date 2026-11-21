@@ -173,6 +173,8 @@ class WindowChrome(QObject):
 
     def ensure_icon(self, window):
         if self._shutting_down or self._icon_applying or sip.isdeleted(window) or self.icon.isNull(): return
+        # WinId/close events may queue a callback while the native window is being torn down.
+        if not window.isVisible() or window.windowHandle() is None: return
         self._icon_applying = True
         try:
             if self.application.windowIcon().cacheKey() != self.icon.cacheKey():

@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "platform": "android",
+  "application_id": "hu.synostream.android",
+  "version": "0.5.18",
+  "version_code": 23,
+  "min_sdk": 26,
+  "filename": "SynoStream_Android_0.5.18.apk",
+  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.18/SynoStream_Android_0.5.18.apk",
+  "sha256": "a1400a7c7b8de0c3b0e9fb42902ac6d76e57aee002332e96309ffd1016d89b77",
+  "size": 1448208,
+  "signing_certificate_sha256": "993702ff90412c5aefcb43797d67adccb7bcdf62969f215fb92e9a5c52bca857",
+  "notes": "# Változások – 0.5.18\n\n- A meglévő ikonokhoz illő kuka a film- és sorozatrészletek jobb felső sarkában.\n- NAS-fájlok tényleges törlése tételes áttekintéssel és megerősítéssel.\n- Évadválasztó és a többi évadhoz tartozó fájlok megőrzése.\n- Saját segédfájlok és üres mappák eltakarítása; közös médiatárgyökér védelme.\n- Mappa-változás ellenőrzése írás előtt, bizonytalan művelet automatikus ismétlése nélkül.\n- Kártyalista, mentett cache és helyi csoportosítás frissítése sikeres törlés után.\n- A beolvasószolgáltatás minden új indítási kérésnél megerősíti az előtérbeli állapotát.\n"
+}
