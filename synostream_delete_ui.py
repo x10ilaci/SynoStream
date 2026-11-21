@@ -18,6 +18,7 @@ class DeleteMediaDialog(QDialog):
         note.setWordWrap(True);layout.addWidget(note)
         self.season_widget=QWidget();self.season_layout=QVBoxLayout(self.season_widget)
         self.season_scroll=QScrollArea();self.season_scroll.setWidgetResizable(True);self.season_scroll.setWidget(self.season_widget);self.season_scroll.setMaximumHeight(150);self.season_scroll.setVisible(not movie);layout.addWidget(self.season_scroll)
+        self.unknown=QCheckBox(translate("Az ismeretlen fájlokat is töröljem"));self.unknown.setChecked(False);self.unknown.toggled.connect(self.update_plan);layout.addWidget(self.unknown);self.unknown.hide()
         self.preview=QPlainTextEdit();self.preview.setReadOnly(True);edit_menu(self.preview);layout.addWidget(self.preview,1)
         self.status=QLabel(translate('Törlendő tartalom ellenőrzése…'));self.status.setWordWrap(True);layout.addWidget(self.status)
         row=QHBoxLayout();layout.addLayout(row)
@@ -52,8 +53,10 @@ class DeleteMediaDialog(QDialog):
     def update_plan(self):
         if not self.inventory:return
         try:
-            self.plan=self.inventory.plan(None if self.movie else [b.property('season') for b in self.boxes if b.isChecked()])
+            self.plan=self.inventory.plan(None if self.movie else [b.property('season') for b in self.boxes if b.isChecked()],self.unknown.isChecked())
             self.preview.setPlainText('\n'.join(self.plan.files)+'\n\n'+self.t('Üresen maradó mappák takarítása:')+'\n'+'\n'.join(self.plan.folders))
+            self.unknown.setVisible(bool(self.plan.unknown))
+            if self.plan.unknown:self.preview.appendPlainText("\n"+self.t("Ismeretlen fájlok – alapértelmezés szerint megmaradnak")+"\n"+"\n".join(self.plan.unknown))
             self.status.setText(str(len(self.plan.files))+' '+self.t('fájl törlése. A nem üres és a médiatár gyökérmappái megmaradnak.'))
             self.delete.setEnabled(True)
         except ValueError as error:
@@ -65,7 +68,7 @@ class DeleteMediaDialog(QDialog):
         if not self.can_write():
             self.status.setText(self.t('A folyamatban lévő beolvasás befejezésére várunk…'))
             QTimer.singleShot(300,self.confirm);return
-        self.writing=True;self.attempted=True;self.cancel.setEnabled(False);self.season_widget.setEnabled(False)
+        self.writing=True;self.attempted=True;self.cancel.setEnabled(False);self.season_widget.setEnabled(False);self.unknown.setEnabled(False)
         self.status.setText(self.t('Törlés folyamatban…'))
         plan=self.plan;inventory=self.inventory
         def work(stop):

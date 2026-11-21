@@ -25,6 +25,6 @@ public class DsDesignTest {
         d.setOrientationLeft();assertTrue(d.wait(Until.hasObject(By.res(pkg+":id/detail_info")),10000));shot("detail-landscape");click("detail_close");assertTrue(d.wait(Until.hasObject(By.res(pkg+":id/poster_grid")),5000));shot("grid-landscape");
         click("menu_button");assertTrue(d.wait(Until.hasObject(By.desc("Filmek médiatár")),5000));shot("drawer-landscape");click("menu_button");
         d.findObject(By.desc("További lehetőségek")).click();assertTrue(d.wait(Until.hasObject(By.text("Rendezési beállítások")),5000));d.findObject(By.text("Rendezési beállítások")).click();assertTrue(d.wait(Until.hasObject(By.text("Cím – Z–A")),5000));d.findObject(By.text("Cím – Z–A")).click();
-        assertTrue(d.wait(Until.hasObject(By.text("Mappa szerint")),10000));d.findObject(By.text("Mappa szerint")).click();assertTrue(d.wait(Until.hasObject(By.text("Mappa kiválasztása  ▾")),5000));d.findObject(By.text("Mappa kiválasztása  ▾")).click();assertTrue(d.wait(Until.hasObject(By.text("Összes mappa")),5000));d.findObject(By.text("Összes mappa")).click();
+        click("tab_recommendations");assertTrue(d.wait(Until.hasObject(By.res(pkg+":id/recommendations_panel")),10000));click("tab_all");assertTrue(d.wait(Until.hasObject(By.res(pkg+":id/poster_grid")),5000));
     }
 }

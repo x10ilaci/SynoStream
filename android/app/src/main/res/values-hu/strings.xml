@@ -460,4 +460,13 @@
     <string name="rec_tmdb">Megnyitás a TMDB-n</string>
     <string name="rec_prefer_hu">Magyar adatlapok előnyben</string>
     <string name="rec_hu_notice">A TMDB-n ellenőrzött magyar leírásokat részesíti előnyben. Ez nem igazolja a magyar szinkront.</string>
+<string name="delete_unknown_heading">Ismeretlen fájlok – alapértelmezés szerint megmaradnak</string>
+<string name="delete_unknown_include">Az ismeretlen fájlokat is töröljem</string>
+<string name="delete_physical_required">A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.</string>
+<string name="automatic_library_title">Automatikus médiatár-frissítés</string>
+<string name="automatic_library_mobile">Mobilhálózaton is</string>
+<string-array name="automatic_library_intervals"><item>Ki</item><item>5 perc</item><item>15 perc</item><item>60 perc</item></string-array>
+<string name="rec_restoring">Betöltés…</string>
+<string name="delete_api_range">A NAS nem támogatja ezt a törlési műveletet.</string>
+<string name="delete_physical_mismatch">A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.</string>
 </resources>

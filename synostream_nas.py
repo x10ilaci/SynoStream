@@ -261,7 +261,7 @@ class RemoteNASClient:
         offset = 0
         while True:
             self._check_cancelled()
-            kwargs = {"additional": "real_path,size,owner,time,perm", "offset": offset, "limit": 500}
+            kwargs = {"additional": '["real_path","size","owner","time","perm"]' if path else '["real_path","owner","time","perm"]', "offset": offset, "limit": 500}
             if path:
                 kwargs["folder_path"] = path
             data = self.api_get("SYNO.FileStation.List", self.list_version,
@@ -358,10 +358,12 @@ class RemoteNASClient:
             for attempt in range(2):
                 self._check_cancelled()
                 info=self.api_info[api]
-                if int(info.get('maxVersion',0))<2:raise RuntimeError('A NAS nem támogatja ezt a törlési műveletet.')
+                minimum=int(info.get('minVersion',1));maximum=int(info.get('maxVersion',0))
+                if minimum<1 or maximum<minimum:raise RuntimeError('A NAS nem támogatja ezt a törlési műveletet.')
+                version=max(minimum,min(2,maximum))
                 try:
-                    response=self._post(self._endpoint(info['path']),data={'api':api,'version':2,'method':'delete',
-                        'path':json.dumps(values,ensure_ascii=False),'recursive':'false','_sid':self.sid},timeout=(8,60))
+                    response=self._post(self._endpoint(info['path']),data={'api':api,'version':version,'method':'delete',
+                        'path':json.dumps(values,ensure_ascii=False),'recursive':'false','_sid':self.sid},timeout=(8,120))
                     try:response.raise_for_status();payload=response.json()
                     finally:response.close()
                 except (requests.RequestException, ValueError, TypeError):

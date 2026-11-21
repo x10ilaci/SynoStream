@@ -1,16 +1,31 @@
-# Módosított fájlok
+# Módosított fájlok – 0.5.22
 
 - app/build.gradle
-- app/src/androidTest/java/hu/synostream/android/Android0520Test.java
+- app/src/androidTest/java/hu/synostream/android/Android0512Test.java
+- app/src/androidTest/java/hu/synostream/android/Android0519Test.java
 - app/src/androidTest/java/hu/synostream/android/Android0520UpgradeTest.java
+- app/src/androidTest/java/hu/synostream/android/Android0521Test.java
+- app/src/androidTest/java/hu/synostream/android/DsDesignTest.java
+- app/src/androidTest/java/hu/synostream/android/FakeNas.java
+- app/src/androidTest/java/hu/synostream/android/Lifecycle051Test.java
+- app/src/main/java/hu/synostream/android/DeleteUi.java
+- app/src/main/java/hu/synostream/android/LibraryRefreshPlan.java
 - app/src/main/java/hu/synostream/android/MainActivity.java
+- app/src/main/java/hu/synostream/android/MediaDeletion.java
+- app/src/main/java/hu/synostream/android/NasClient.java
 - app/src/main/java/hu/synostream/android/Recommendations.java
 - app/src/main/java/hu/synostream/android/RecommendationsUi.java
 - app/src/main/java/hu/synostream/android/SynoApp.java
+- app/src/main/java/hu/synostream/android/UiText.java
 - app/src/main/res/values/ids.xml
 - app/src/main/res/values/strings.xml
 - app/src/main/res/values-hu/strings.xml
+- app/src/test/java/hu/synostream/android/LibraryRefreshPlanTest.java
+- app/src/test/java/hu/synostream/android/MediaDeleteProtocolTest.java
+- app/src/test/java/hu/synostream/android/MediaDeletionTest.java
+- app/src/test/java/hu/synostream/android/NasClientConcurrencyTest.java
 - app/src/test/java/hu/synostream/android/RecommendationsTest.java
 - ELLENORZES.md
 - README.md
 - VALTOZASOK.md
+- MODOSITOTT_FAJLOK.md

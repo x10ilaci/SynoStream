@@ -461,4 +461,13 @@
     <string name="rec_tmdb">Open on TMDB</string>
     <string name="rec_prefer_hu">Prefer Hungarian metadata</string>
     <string name="rec_hu_notice">Prefers verified Hungarian TMDB descriptions. This does not confirm Hungarian dubbing.</string>
+<string name="delete_unknown_heading">Unknown files – retained by default</string>
+<string name="delete_unknown_include">Also delete the unknown files</string>
+<string name="delete_physical_required">The NAS did not provide a physical path; deletion cannot be performed safely.</string>
+<string name="automatic_library_title">Automatic library refresh</string>
+<string name="automatic_library_mobile">Also on mobile data</string>
+<string-array name="automatic_library_intervals"><item>Off</item><item>5 minutes</item><item>15 minutes</item><item>60 minutes</item></string-array>
+<string name="rec_restoring">Loading…</string>
+<string name="delete_api_range">The NAS does not support this deletion operation.</string>
+<string name="delete_physical_mismatch">The folder contains a link to another location; deletion was not started.</string>
 </resources>

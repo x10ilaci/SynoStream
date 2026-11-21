@@ -14,9 +14,10 @@ class Files:
    parent=str(PurePosixPath(file).parent)
    while parent!='/':
     self.rows.setdefault(parent,{'path':parent,'name':PurePosixPath(parent).name,'isdir':True,'additional':{'time':{'mtime':1}}});parent=str(PurePosixPath(parent).parent)
+  for value in self.rows.values():value.setdefault('additional',{})['real_path']='/volume1'+value['path']
  def list(self,root):
   if root not in self.rows or not self.rows[root]['isdir']:raise OSError('missing fixture folder')
-  return [copy.deepcopy(e) for p,e in self.rows.items() if str(PurePosixPath(p).parent)==root]
+  return [copy.deepcopy(e) for p,e in self.rows.items() if str(PurePosixPath(p).parent)==(root or '/')]
  def delete(self,paths):
   self.deleted.append(list(paths))
   for p in paths:
@@ -30,7 +31,7 @@ def series():
 
 def test_movie_removes_own_nfo_subtitles_samples_and_empty_parent():
  file=ROOT+'/Movie/Disc1/Movie.mkv';fs,inv=movie([file,ROOT+'/Movie/release.nfo',ROOT+'/Movie/Subs/Movie.hu.srt',ROOT+'/Movie/Sample/sample.mkv'],file)
- fs.rows[ROOT+'/Movie/Empty']={'path':ROOT+'/Movie/Empty','isdir':True};inv=Inventory([file],[ROOT],True,fs.list)
+ fs.rows[ROOT+'/Movie/Empty']={'path':ROOT+'/Movie/Empty','isdir':True,'additional':{'real_path':'/volume1'+ROOT+'/Movie/Empty'}};inv=Inventory([file],[ROOT],True,fs.list)
  plan=inv.plan();assert len(plan.files)==4;result=inv.execute(plan,fs.delete)
  assert ROOT+'/Movie' in result['folders'] and ROOT in fs.rows
  assert not any(p.startswith(ROOT+'/Movie/') for p in fs.rows)

@@ -3,6 +3,7 @@ import org.json.*;import java.io.*;import java.net.*;import java.nio.charset.Sta
 
 /** Test-owned DSM, exercising the real login/source/edit UI without user data. */
 final class FakeNas implements AutoCloseable {
+    volatile boolean omitRealPath=false;
     volatile int taskCount=1,taskCap=100;volatile boolean taskPageTotal;
     volatile String gatedFolder="",failedFolder="";final CountDownLatch folderEntered=new CountDownLatch(1),releaseFolder=new CountDownLatch(1);final Map<String,Long> times=new ConcurrentHashMap<>();
     volatile boolean holdUpload;final CountDownLatch uploadEntered=new CountDownLatch(1),releaseUpload=new CountDownLatch(1);
@@ -44,7 +45,7 @@ final class FakeNas implements AutoCloseable {
                 case "SYNO.API.Auth":if("login".equals(p.get("method"))){authLogins++;lastOtp=p.getOrDefault("otp_code","");lastSession=p.getOrDefault("session","");if(rejectNewLogins){result=new JSONObject().put("success",false).put("error",new JSONObject().put("code",403));break;}}result=new JSONObject().put("success",true).put("data",new JSONObject().put("sid","sid-fixture"));break;
                 case "SYNO.FileStation.List":{
                     if(holdListResponse){listRequestRead.countDown();releaseListResponse.await(30,TimeUnit.SECONDS);}if(listDelayMillis>0)Thread.sleep(listDelayMillis);String folder=p.getOrDefault("folder_path","");if(folder.equals(gatedFolder)&&!gatedFolder.isEmpty()){folderEntered.countDown();releaseFolder.await(15,TimeUnit.SECONDS);}if(folder.equals(failedFolder)&&!failedFolder.isEmpty()){result=new JSONObject().put("success",false).put("error",new JSONObject().put("code",407));break;}JSONArray entries=new JSONArray();Set<String> paths=new TreeSet<>();paths.addAll(folders);paths.addAll(files.keySet());
-                    for(String path:paths){String parent=path.substring(0,path.lastIndexOf('/'));if(!parent.equals(folder))continue;entries.put(new JSONObject().put("name",path.substring(path.lastIndexOf('/')+1)).put("path",path).put("isdir",folders.contains(path)).put("additional",new JSONObject().put("size",files.containsKey(path)?files.get(path).length:0).put("time",new JSONObject().put("mtime",times.getOrDefault(path,100L)))));}
+                    for(String path:paths){String parent=path.substring(0,path.lastIndexOf('/'));if(!parent.equals(folder))continue;entries.put(new JSONObject().put("name",path.substring(path.lastIndexOf('/')+1)).put("path",path).put("isdir",folders.contains(path)).put("additional",new JSONObject().put("real_path",omitRealPath?JSONObject.NULL:"/volume1"+path).put("size",files.containsKey(path)?files.get(path).length:0).put("time",new JSONObject().put("mtime",times.getOrDefault(path,100L)))));}
                     result=new JSONObject().put("success",true).put("data",new JSONObject().put(p.getOrDefault("method","").equals("list_share")?"shares":"files",entries).put("total",entries.length()));break;
                 }
                 case "SYNO.FileStation.Delete":{

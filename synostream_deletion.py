@@ -53,6 +53,8 @@ class Plan:
     folders: tuple
     seasons: tuple
     all_seasons: bool
+    unknown: tuple = ()
+    include_unknown: bool = False
 
 
 class Inventory:
@@ -88,7 +90,7 @@ class Inventory:
         self.roots=tuple(r for r in dict.fromkeys(self.roots) if not any(r!=other and within(r,other) for other in self.roots))
         for root in self.roots:
             parent=pp.dirname(root)
-            if any(within(parent,r) for r in self.library_roots):self._list(parent)
+            self._list("" if parent=="/" else parent)
             self._walk(root,0,root not in self.library_roots)
         for seed in self.seeds:
             if video(seed) and seed not in self.entries:raise ValueError('A kijelölt fájl már nem található a NAS-on.')
@@ -106,8 +108,9 @@ class Inventory:
             listing=[];seen=set()
             for raw in self.list_folder(root):
                 e=dict(raw);p=path(e.get('path') or root+'/'+e.get('name',''))
-                if pp.dirname(p)!=root or p in seen:raise ValueError('A NAS nem egyértelmű mappalistát adott.')
+                if pp.dirname(p)!=(root or "/") or p in seen:raise ValueError('A NAS nem egyértelmű mappalistát adott.')
                 seen.add(p);e['path']=p
+                if not real_path(e).strip():raise ValueError('A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.')
                 if e.get('islink'):raise ValueError('Szimbolikus hivatkozást tartalmazó mappa nem törölhető automatikusan.')
                 listing.append(e)
             self.listings[root]=listing
@@ -116,21 +119,26 @@ class Inventory:
 
     def _walk(self,root,depth,recursive):
         if depth>32 or len(self.entries)>20000:raise ValueError('Túl nagy törlési terület; válassz szűkebb műsorkártyát.')
-        parent_entry=next((e for e in self.listings.get(pp.dirname(root),[]) if e['path']==root),{})
-        physical=real_path(parent_entry).rstrip('/')
+        def physical(logical):
+            parent=pp.dirname(logical)
+            entry=next((e for e in self._list('' if parent=='/' else parent) if e['path']==logical),None)
+            if entry is None:raise ValueError('A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.')
+            return real_path(entry).rstrip('/')
+        resolved_root=physical(root)
+        anchor=max((r for r in self.library_roots if within(root,r)),key=len)
+        if resolved_root!=physical(anchor)+root[len(anchor):]:raise ValueError('A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.')
         for e in self._list(root):
-            p=e['path'];resolved=real_path(e)
-            if physical and resolved and pp.dirname(resolved.rstrip('/'))!=physical:
-                raise ValueError('A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.')
+            p=e['path'];resolved=real_path(e).rstrip('/')
+            if resolved!=resolved_root+'/'+pp.basename(p):raise ValueError('A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.')
             self.entries[p]=e
             if len(self.entries)>20000:raise ValueError('Túl nagy törlési terület.')
-            if e.get('isdir') and recursive and not blocked(p):self._walk(p,depth+1,True)
+            if e.get('isdir') and (recursive or pp.basename(p).casefold() in EXTRA_DIRS) and not blocked(p):self._walk(p,depth+1,True)
 
-    def plan(self,seasons=None):
+    def plan(self,seasons=None,include_unknown=False):
         chosen=set(self.seasons if seasons is None else seasons)
         selected=set(self.targets) if self.movie else {p for p,s in self.videos.items() if s in chosen}
         if not selected:raise ValueError('Válassz legalább egy évadot.')
-        files=set(selected)
+        files=set(selected);unknown=set()
         all_videos={p for p,e in self.entries.items() if not e.get('isdir') and video(p) and not sample(p)}
         owned=[]
         candidates=list(self.roots)+[p for p,e in self.entries.items() if e.get('isdir')]
@@ -140,14 +148,19 @@ class Inventory:
             if descendants and descendants.issubset(selected):owned.append(directory)
         for p,e in self.entries.items():
             if e.get('isdir') or self._protected(p):continue
-            if any(within(p,d) for d in owned):files.add(p);continue
+            if any(within(p,d) for d in owned):
+                if video(p) or pp.splitext(p)[1].lower() in AUX:files.add(p)
+                else:
+                    unknown.add(p)
+                    if include_unknown:files.add(p)
+                continue
             ext=pp.splitext(p)[1].lower()
             if ext in AUX:
                 stem=pp.splitext(pp.basename(p))[0].casefold()
-                for selected_file in selected:
-                    base=pp.splitext(pp.basename(selected_file))[0].casefold()
-                    if (pp.dirname(p)==pp.dirname(selected_file) or pp.basename(pp.dirname(p)).casefold() in EXTRA_DIRS) and (stem==base or stem.startswith(base+'.')):
-                        files.add(p);break
+                directory=pp.dirname(pp.dirname(p)) if pp.basename(pp.dirname(p)).casefold() in EXTRA_DIRS else pp.dirname(p)
+                matching=[v for v,e in self.entries.items() if not e.get('isdir') and video(v) and pp.dirname(v)==directory and (stem==pp.splitext(pp.basename(v))[0].casefold() or stem.startswith(pp.splitext(pp.basename(v))[0].casefold()+'.'))]
+                assigned=min(matching,key=lambda v:(-len(pp.splitext(pp.basename(v))[0]),v)) if matching else None
+                if assigned in selected:files.add(p)
                 if not self.movie and pp.dirname(p) not in self.library_roots and explicit_season(p) in chosen:files.add(p)
         if any(self._protected(p) for p in files):raise ValueError('A kijelölés más médiakártya fájlját érintené.')
         folders={p for p,e in self.entries.items() if e.get("isdir") and not self._protected(p) and p not in self.library_roots and any(within(p,d) for d in owned)}
@@ -155,10 +168,10 @@ class Inventory:
             parent=pp.dirname(file)
             while parent not in self.library_roots and any(within(parent,r) for r in self.library_roots):
                 folders.add(parent);parent=pp.dirname(parent)
-        return Plan(tuple(sorted(files)),tuple(sorted(folders,key=lambda p:(-p.count('/'),p))),tuple(sorted(chosen)),not self.movie and chosen.issuperset(self.seasons))
+        return Plan(tuple(sorted(files)),tuple(sorted(folders,key=lambda p:(-p.count('/'),p))),tuple(sorted(chosen)),not self.movie and chosen.issuperset(self.seasons),tuple(sorted(unknown)),bool(include_unknown))
 
     def execute(self,plan,delete_paths,progress=lambda done,total:None):
-        if plan != self.plan(plan.seasons if not self.movie else None):
+        if plan != self.plan(plan.seasons if not self.movie else None,plan.include_unknown):
             raise ValueError('A törlési terv nem egyezik a jóváhagyott kijelöléssel.')
         # Validate the complete reviewed snapshot immediately before the first write.
         for directory,expected in self.listings.items():

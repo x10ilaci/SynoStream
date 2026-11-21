@@ -1,4 +1,4 @@
-# SynoStream 1.104 – Windows x64 futtatható csomag
+# SynoStream 1.105 – Windows x64 futtatható csomag
 
 Az EXE az alábbi futtatókörnyezeteket és könyvtárakat tartalmazza. A licencmásolatok a `licenses/` mappában vannak. A Qt modulok feltételei modulonként eltérhetnek; lásd a Qt licencelési tájékoztatóját.
 
@@ -16,5 +16,5 @@ Az EXE az alábbi futtatókörnyezeteket és könyvtárakat tartalmazza. A licen
 - certifi 2026.10.19 – MPL-2.0; `licenses/certifi-LICENSE.txt`.
 - PyInstaller 6.22.3 bootloader – GPL-2.0-or-later speciális kivétellel; `licenses/PyInstaller-COPYING.txt`. A PyInstaller buildeszköz, nem Python-függőségként töltődik be.
 
-A program licencét a `LICENSE` tartalmazza (GNU GPL-3.0-only). A forráskód a külön kiadott `SynoStream_1.104_Source.zip` csomagban van. Az MPV nincs az EXE-be csomagolva; az alkalmazás szükség esetén külön tölti le.
+A program licencét a `LICENSE` tartalmazza (GNU GPL-3.0-only). A forráskód a külön kiadott `SynoStream_1.105_Source.zip` csomagban van. Az MPV nincs az EXE-be csomagolva; az alkalmazás szükség esetén külön tölti le.
 

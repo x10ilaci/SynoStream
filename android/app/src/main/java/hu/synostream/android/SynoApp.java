@@ -13,21 +13,27 @@ import java.nio.charset.StandardCharsets;
 public final class SynoApp extends Application {
     public String externalTorrentUri,externalTorrentMime;public final TorrentDraft torrentDraft=new TorrentDraft();public volatile boolean downloadBusy=false;public DownloadStation downloads;public boolean downloadsOpen=false;
     final LibraryRefreshPlan automaticLibraries=new LibraryRefreshPlan();private boolean automaticForeground=false;
+    java.util.function.BooleanSupplier automaticCellular=()->this.networkWatch!=null&&!this.networkWatch.allowLocal();
+    java.util.function.Consumer<android.content.Intent> scanServiceStarter=intent->startForegroundService(intent);
+    long automaticInterval(){return LibraryRefreshPlan.intervalMinutes(store.get("automatic_library_minutes","5"));}
+    boolean automaticAllowed(){return LibraryRefreshPlan.allowed(automaticInterval(),automaticCellular.getAsBoolean(),Boolean.parseBoolean(store.get("automatic_library_mobile","false")));}
+    void automaticSettingsChanged(){if(scanRunning&&automaticScan)cancelScan(true);automaticLibraries.reset();main.removeCallbacks(automaticTick);if(automaticForeground)main.post(automaticTick);}
     private final Runnable automaticTick=()->checkAutomaticLibraries();
-    void automaticForeground(boolean foreground){automaticForeground=foreground;main.removeCallbacks(automaticTick);if(foreground)main.postDelayed(automaticTick,1000);}
+    void automaticForeground(boolean foreground){automaticForeground=foreground;main.removeCallbacks(automaticTick);if(!foreground&&scanRunning&&automaticScan)cancelScan(true);if(foreground)main.postDelayed(automaticTick,1000);}
     private void checkAutomaticLibraries(){
         if(!automaticForeground)return;
-        if(client!=null&&!demo&&connectionReady()){
+        boolean allowed=automaticAllowed();if(automaticInterval()==0)automaticLibraries.prepare(identity+"#"+epoch,List.of(),SystemClock.elapsedRealtime(),0);
+        if(allowed&&client!=null&&!demo&&connectionReady()){
             List<String> ids=new ArrayList<>();if(selected()!=null&&!LibraryConfig.paths(selected()).isEmpty())ids.add(selectedLibrary);
             for(int i=0;i<libraries.length();i++){JSONObject library=libraries.optJSONObject(i);if(library!=null&&!LibraryConfig.paths(library).isEmpty())ids.add(library.optString("id"));}
-            automaticLibraries.prepare(identity+"#"+epoch,ids,SystemClock.elapsedRealtime());
+            automaticLibraries.prepare(identity+"#"+epoch,ids,SystemClock.elapsedRealtime(),automaticInterval());
             if(!busy&&!scanRunning&&!downloadBusy&&!metadataBusy){
                 String id=automaticLibraries.next();
                 if(id!=null){JSONObject chosen=null;for(int i=0;i<libraries.length();i++){JSONObject library=libraries.optJSONObject(i);if(library!=null&&id.equals(library.optString("id")))chosen=library;}
                     if(chosen!=null)scan(chosen);if(chosen==null||!busy)automaticLibraries.complete(id,SystemClock.elapsedRealtime());}
             }
         }
-        main.removeCallbacks(automaticTick);main.postDelayed(automaticTick,automaticLibraries.waiting()?1000:15000);
+        main.removeCallbacks(automaticTick);main.postDelayed(automaticTick,allowed&&automaticLibraries.waiting()?1000:15000);
     }
     List<Library.Card> previousLibraryCards(JSONObject library,String owner)throws Exception{
         List<Library.Card> result=new ArrayList<>();synchronized(cacheLock){AtomicFile file=new AtomicFile(cacheFile(library,owner));if(file.getBaseFile().exists()){
@@ -101,7 +107,7 @@ public final class SynoApp extends Application {
     LibraryFactory libraryFactory=Library::new;
     private final PairingReadCache scanPairings=new PairingReadCache();private List<Library.Card> scanBase;private String scanBaseLibrary="",scanBaseOwner="";private int scanBaseToken;
     public void scan(JSONObject library){scan(library,false);}
-    public void scan(JSONObject library,boolean force){if(library==null||busy||client==null)return;if(!connectionReady()){status=connectionProblem();changed();return;}if(LibraryConfig.paths(library).isEmpty()){status="Válassz forrást ehhez a médiatárhoz.";changed();return;}busy=true;changed();try{startForegroundService(new android.content.Intent(this,ScanService.class).putExtra("library",library.toString()).putExtra("force_metadata",force));}catch(Exception e){busy=false;status="A háttérben is futó beolvasás nem indítható. Nyisd meg az alkalmazást, és próbáld újra.";changed();}}
+    public void scan(JSONObject library,boolean force){if(library==null||busy||client==null)return;if(!connectionReady()){status=connectionProblem();changed();return;}if(LibraryConfig.paths(library).isEmpty()){status="Válassz forrást ehhez a médiatárhoz.";changed();return;}busy=true;changed();boolean automatic=!force&&automaticLibraries.running(library.optString("id"));if(automatic){if(!automaticForeground||!automaticAllowed()){busy=false;automaticLibraries.reset();return;}runScan(library,()->{},()->{},false);return;}try{scanServiceStarter.accept(new android.content.Intent(this,ScanService.class).putExtra("library",library.toString()).putExtra("force_metadata",force));}catch(Exception e){busy=false;status="A háttérben is futó beolvasás nem indítható. Nyisd meg az alkalmazást, és próbáld újra.";changed();}}
     public void cancelScan(){cancelScan(false);}
     public void cancelScan(boolean keepPending){if(keepPending)automaticLibraries.reset();else automaticLibraries.cancel(SystemClock.elapsedRealtime());rollbackPreview(scanToken);if(!keepPending)store.put("scan_pending","");scanToken++;java.util.concurrent.Future<?> job=scanJob;if(job!=null)job.cancel(true);scanRunning=false;automaticScan=false;busy=false;status="Beolvasás megszakítva. A korábbi lista megmaradt.";changed();}
     private void rollbackPreview(int token){if(scanBase!=null&&scanBaseToken==token&&scanBaseLibrary.equals(selectedLibrary)&&scanBaseOwner.equals(identity)){rawCards=scanBase;cards=edits.apply(rawCards,selectedLibrary);}if(scanBaseToken==token)scanBase=null;}

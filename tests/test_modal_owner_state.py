@@ -132,7 +132,7 @@ def test_native_nested_close_and_reopen_preserves_owner(tmp_path):
 import sys, importlib.util
 from pathlib import Path
 source=Path(sys.argv[1]); folder=Path(sys.argv[2]); sys.path[:0]=[str(source),str(source/'tests')]
-spec=importlib.util.spec_from_file_location('native_app',source/'SynoStream_1.104.py')
+spec=importlib.util.spec_from_file_location('native_app',source/'SynoStream_1.105.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 from test_modal_owner_state import exercise_nested_close
 app=m.QApplication([]);m.init_db()

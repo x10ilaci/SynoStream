@@ -22,4 +22,4 @@
     <item name="profile_save" type="id"/>
     <item name="login_otp" type="id"/>
     <item name="detail_delete" type="id"/><item name="confirm_media_delete" type="id"/>
-<item name="update_check" type="id"/><item name="update_install" type="id"/><item name="tab_recommendations" type="id"/><item name="tab_all" type="id"/><item name="recommendations_panel" type="id"/><item name="recommendations_next" type="id"/><item name="recommendations_status" type="id"/><item name="rec_interested_tab" type="id"/><item name="rec_hidden_tab" type="id"/><item name="rec_discover_tab" type="id"/></resources>
+<item name="update_check" type="id"/><item name="update_install" type="id"/><item name="tab_recommendations" type="id"/><item name="tab_all" type="id"/><item name="recommendations_panel" type="id"/><item name="recommendations_next" type="id"/><item name="recommendations_status" type="id"/><item name="rec_interested_tab" type="id"/><item name="rec_hidden_tab" type="id"/><item name="rec_discover_tab" type="id"/><item name="delete_unknown" type="id"/></resources>

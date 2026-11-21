@@ -1,11 +1,11 @@
-# SynoStream Android 0.5.20
+# SynoStream Android 0.5.22
 
-A médiatár Mind / Mappa szerint lapsorában a mappánkénti nézet helyét az Ajánló vette át. A Windows Ajánlójához hasonlóan a kiválasztott médiatár azonosított műsorai alapján kér TMDB-ajánlásokat. A más médiatárakban már meglévő címeket is kiszűri, TMDB-azonosító és médiatípus alapján.
+Javítókiadás, versionCode: 27. Telepíthető a korábbi app fölé, az alkalmazásadatok megtartásával. Kiadás és APK: https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.22
 
-Fedezz fel, Érdekel és Elrejtve listák; Új ajánlások gomb; részletek és TMDB-adatlap. A visszajelzések és az ismétlést csökkentő előzmények fiók-/médiatáranként külön mentődnek. Az érdeklődés új ajánlási kiindulópont is lehet. A kis készletből természetesen ismétlődhetnek címek.
+A hat célzott változás a VALTOZASOK.md-ben, az ellenőrzés tényleges eredményei és a nem ellenőrzött részek az ELLENORZES.md-ben, a fájllista a MODOSITOTT_FAJLOK.md-ben találhatók.
 
-A Beállításokban a Magyar adatlapok előnyben kapcsoló alapból bekapcsolt. A TMDB magyar fordításai közül ellenőrzi a magyar leírást; ez nem igazolja a magyar hangot vagy szinkront. Az Ajánlóhoz az appban beállított TMDB API-kulcs szükséges.
+NAS-törlésnél az ismeretlen fájlok alapból megmaradnak. Ha a NAS nem adja meg az ellenőrzéshez szükséges fizikai útvonalat, a törlés leáll; nincs csendes, gyengébb ellenőrzésre visszaesés.
 
-Gyorsítótárazott ajánlások, körönként legfeljebb négy új médiatári kiindulópont és nyolc nyelvi ellenőrzés, legfeljebb négy párhuzamos hálózati kéréssel. A médiatárak fájlnevei, elérési útjai és NAS-hitelesítése nem kerülnek a TMDB-hez az ajánláskérésben.
+A Beállításokban az automatikus médiatár-frissítés kikapcsolható, illetve 5, 15 vagy 60 percre állítható. A Mobilhálózaton is kapcsoló alapból kikapcsolt. A beállítás az időzített automatikus ellenőrzést vezérli; a kézi és force beolvasás működése megmaradt.
 
-A 0.5.19-es alkalmazás frissítőjével telepíthető. A frissítés megtalálható indításkor vagy a Beállítások / Frissítés keresése gombbal; a telepítést az Androidban jóvá kell hagyni.
+Az élő NAS-t használó vizsgálatok tiltva voltak. A tesztekhez használt NAS-adatok és az emelt verziószámú aláírási APK kizárólag mesterséges tesztfixture-ök; felhasználói hozzáférési adatok és privát kulcs nem részei a kiadott csomagnak.
