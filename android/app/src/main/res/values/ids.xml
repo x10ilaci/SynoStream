@@ -22,4 +22,4 @@
     <item name="profile_save" type="id"/>
     <item name="login_otp" type="id"/>
     <item name="detail_delete" type="id"/><item name="confirm_media_delete" type="id"/>
-</resources>
+<item name="update_check" type="id"/><item name="update_install" type="id"/></resources>

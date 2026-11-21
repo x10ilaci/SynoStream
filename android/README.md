@@ -1,9 +1,9 @@
-# SynoStream Android 0.5.18
+# SynoStream Android 0.5.19
 
-A megnyitott NAS-médiakártya jobb felső részén új kukaikon található. A gomb ténylegesen törli a NAS-fájlokat. Sorozatnál választhatók a törlendő évadok; törlés előtt tételes fájllista és külön megerősítés jelenik meg.
+GitHub-alapú alkalmazásfrissítés. A Beállítások / Alkalmazásfrissítés részen kézi keresés és indításkori automatikus ellenőrzés található. Az automatikus ellenőrzés alapból bekapcsolt; folyamatindításonként egyszer ellenőriz, a kézi keresés bármikor használható.
 
-A saját film-/évadmappák kiegészítő fájljai (NFO, felirat, sample stb.) és az üresen maradt mappák is eltűnnek. Más filmek, megtartott évadok, médiatárgyökerek és alkalmazásadatok megmaradnak. Közös mappában a nem egyértelműen hozzárendelhető kiegészítőt megőrzi.
+Újabb, kompatibilis verziónál megjelennek a változások. A Frissítés és telepítés gomb letölti és ellenőrzi az APK-t, majd megnyitja az Android telepítőjét. A rendszerben engedélyezni kell a SynoStream számára a telepítést, és a telepítés jóváhagyása szükséges. Nem kell eltávolítani az előző appot; a beállítások megmaradnak.
 
-A törlés az alkalmazásban nem vonható vissza; a NAS saját lomtárbeállítása érvényesülhet. A NAS lomtárát nem üríti. Ha a tartalom a jóváhagyás után megváltozott, új ellenőrzést kér. Bizonytalan hálózati írást nem ismétel automatikusan.
+HTTPS/GitHub-eredet, verziókód, alkalmazásazonosító, méret, SHA256 és a telepített alkalmazás aláírása ellenőrzött. Hibás/hiányos/más aláírású csomagot nem telepít. Az alkalmazásfrissítés nem használ NAS-hitelesítést.
 
-A korábbi verzió fölé telepíthető, azonos debug tanúsítvánnyal. GitHub-publikálás nem történt.
+Ezt a verziót a 0.5.18-ra még kézzel kell feltelepíteni; a következő frissítéseket már az app kezeli. Hosszú háttérbe küldés vagy az alkalmazásfolyamat leállítása megszakíthatja a letöltést; ilyen esetben a kézi keresésből újraindítható.

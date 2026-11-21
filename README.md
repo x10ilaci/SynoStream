@@ -3,9 +3,9 @@
 ## Letöltések
 
 - [Windows 1.104](https://github.com/x10ilaci/SynoStream/releases/tag/v1.104)
-- [Android 0.5.18 APK és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.18)
+- [Android 0.5.19 APK és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.19)
 
-Az Android forrása az `android/` mappában található. A mobilos frissítési csatorna leírása: [android/UPDATE_CHANNEL.md](android/UPDATE_CHANNEL.md). Az alkalmazáson belüli Android-frissítés egy későbbi fejlesztés; a kiadási csatorna már rendelkezésre áll.
+Az Android forrása az `android/` mappában található. A mobilos frissítési csatorna leírása: [android/UPDATE_CHANNEL.md](android/UPDATE_CHANNEL.md). A 0.5.19-től kézi és indításkori automatikus frissítésellenőrzés is elérhető; elfogadás után az app letölti, ellenőrzi az APK-t és megnyitja az Android telepítőjét.
 
 
 Nyilvános, forráskódú Windows-alkalmazás helyi és Synology NAS-on tárolt filmek és TV-műsorok böngészéséhez és lejátszásához.

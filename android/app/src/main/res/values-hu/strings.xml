@@ -417,4 +417,25 @@
     <string name="delete_complete">A NAS-törlés befejeződött.</string>
     <string name="delete_need_nas">A törléshez NAS-kapcsolat szükséges.</string>
   <string name="delete_preview_format">%1$s\n\n%2$s\n%3$s</string>
+
+    <string name="update_title">Alkalmazásfrissítés</string>
+    <string name="update_startup">Frissítés ellenőrzése indításkor</string>
+    <string name="update_check">Frissítés keresése</string>
+    <string name="update_system_notice">Letöltés GitHubról. A telepítést az Android ablakában jóvá kell hagyni. A beállításaid megmaradnak.</string>
+    <string name="update_busy">Már folyamatban van a frissítés ellenőrzése vagy letöltése.</string>
+    <string name="update_checking">Frissítés keresése…</string>
+    <string name="update_check_error">Nem sikerült ellenőrizni a frissítést. Próbáld újra később.</string>
+    <string name="update_current">Nincs elérhető újabb, kompatibilis verzió.</string>
+    <string name="update_available">Elérhető a SynoStream %1$s</string>
+    <string name="update_install">Frissítés és telepítés</string>
+    <string name="update_later">Később</string>
+    <string name="update_downloading">Frissítés letöltése: %1$d%%</string>
+    <string name="update_background">A letöltés az alkalmazás használata közben is folytatódhat. Ellenőrzés után indul a telepítő.</string>
+    <string name="update_close">Bezárás</string>
+    <string name="update_download_error">A letöltés vagy az ellenőrzés sikertelen. Telepítés nem indult. Próbáld újra.</string>
+    <string name="update_permission_title">SynoStream-frissítések engedélyezése</string>
+    <string name="update_permission_notice">A következő képernyőn engedélyezd ennek az alkalmazásnak a telepítést, majd térj vissza a folytatáshoz.</string>
+    <string name="update_permission_open">Beállítás megnyitása</string>
+    <string name="update_permission_denied">A telepítési engedély nincs megadva. A Beállításokból újra próbálhatod.</string>
+    <string name="update_installer_error">Az Android telepítője nem indítható. Próbáld újra a Beállításokból.</string>
 </resources>

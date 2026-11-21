@@ -6,6 +6,6 @@ Stable metadata URL: https://raw.githubusercontent.com/x10ilaci/SynoStream/main/
 
 The metadata includes application ID, monotonically increasing version_code, version, minimum SDK, immutable release asset URL, byte size, SHA256 and signing certificate SHA256. The identical metadata is also attached to each Android release as android-update.json.
 
-The current app does not yet consume this feed. A future updater must check the application ID, installed versionCode, HTTPS origin, download size/hash and APK signing certificate before requesting installation through Android. Installation requires Android's user confirmation and permission to install from this source; do not promise silent updates.
+Since 0.5.19 the app consumes this feed for startup and manual update checks. The updater checks the application ID, installed versionCode, HTTPS origin, download size/hash and APK signing certificate before requesting installation through Android. Installation requires Android's user confirmation and permission to install from this source; do not promise silent updates.
 
 APK signing keys are private and are not in the repository or source ZIP. Existing installations use the current debug certificate shown in update.json; preserve that key for updates to those installations. A build signed with another key cannot replace those installations.

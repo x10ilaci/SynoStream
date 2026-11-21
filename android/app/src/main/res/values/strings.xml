@@ -418,4 +418,25 @@
     <string name="delete_need_nas">Connect to the NAS to delete media.</string>
   <string name="delete_preview_format">%1$s\n\n%2$s\n%3$s</string>
   
+
+    <string name="update_title">App updates</string>
+    <string name="update_startup">Check for updates at startup</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_system_notice">Downloads from GitHub. Android asks you to confirm installation. Your settings are retained.</string>
+    <string name="update_busy">An update operation is already running.</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_check_error">Could not check for updates. Try again later.</string>
+    <string name="update_current">No compatible newer version is available.</string>
+    <string name="update_available">SynoStream %1$s is available</string>
+    <string name="update_install">Update and install</string>
+    <string name="update_later">Later</string>
+    <string name="update_downloading">Downloading update: %1$d%%</string>
+    <string name="update_background">The download can continue while this app is open. Installation starts after verification.</string>
+    <string name="update_close">Close</string>
+    <string name="update_download_error">Download or verification failed. No installation was started. Try again.</string>
+    <string name="update_permission_title">Allow SynoStream updates</string>
+    <string name="update_permission_notice">On the next screen, allow this app to install updates, then return here to continue.</string>
+    <string name="update_permission_open">Open settings</string>
+    <string name="update_permission_denied">Installation permission was not granted. You can try again from Settings.</string>
+    <string name="update_installer_error">Android could not open the installer. Try again from Settings.</string>
 </resources>
