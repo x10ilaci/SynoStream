@@ -1,21 +1,27 @@
-# Code signing policy
+# Kiadási és aláírási politika
 
-The current Windows 1.99 release is **unsigned**. Its SHA256 checksums and update-manifest hashes verify file integrity; they do not constitute Authenticode signing.
+## Windows
 
-The earlier `.github/workflows/signpath-release.yml` is a preparatory workflow for version 1.54. Its presence does not mean that a signing certificate has been activated or that current releases are signed. No SignPath account, approval, token or certificate is required by the current build/update workflow.
+A jelenlegi Windows EXE **nincs Authenticode-aláírással ellátva**. A SHA256 és a frissítési leíró fájlhash-ei integritást ellenőriznek, nem jelentenek kódaláírást vagy vírusvédelmi minősítést.
 
-If SignPath Foundation signing is enabled in a future release, only executables built from the matching public tagged source may be submitted. Each signing request must receive the maintainer's manual approval. Signing credentials must never be distributed with application files.
+A SignPath-workflow előkészített infrastruktúra; jelenléte nem jelent aktív tanúsítványt. Egy későbbi aláírási integrációhoz külön beállítás és karbantartói döntés szükséges.
 
-## Current release process
+## Android
 
-1. Update and test the source, entry-point version, build version and `release_version.txt`.
-2. Build locally with `build_windows.ps1`, or push the matching version tag to trigger `.github/workflows/windows-release.yml`.
-3. Verify the executable, source archive, Windows ZIP, SHA256 file and `update.json` together.
-4. The workflow creates a GitHub **draft**. Publish it after reviewing its artifacts. `publish_release.py --directory <release-folder> --publish` performs this final publication when authorized by the maintainer.
-5. The Windows updater discovers the latest published stable release through GitHub Releases.
+A 0.5.24-től közzétett APK-k **release buildváltozatok**, kikapcsolt Java- és natív hibakereséssel. A [verify_release.py](android/verify_release.py) az elkészült APK-n ellenőrzi a csomagazonosítót, verziót, `debuggable` és `testOnly` jelzőket, az érvényes aláírást és a meglévő tanúsítvány egyezését. A [publish_android.py](android/publish_android.py) feltöltés előtt kötelezően futtatja ezt az ellenőrzést.
 
-## Maintainer and privacy
+A korábbi telepítésekkel kompatibilis aláírókulcsot megőrizzük. A tanúsítvány történeti neve Android Debug; ez különbözik az APK hibakereshetőségi jelzőjétől. Más kulcsra váltás külön migrációs tervet igényelne. A privát kulcs nincs a GitHub-tárban, az APK-ban vagy a forrás-ZIP-ben.
 
-Project maintainer: [@x10ilaci](https://github.com/x10ilaci).
+A Play Protect minősítése független a release buildellenőrzéstől. Figyelmeztetés esetén a pontos jelzést ki kell vizsgálni; téves minősítésnél a Google hivatalos felülvizsgálati eljárása használható.
 
-SynoStream does not send telemetry or library credentials to the maintainer. Network access includes the configured NAS, TMDB, the MPV download and optional Windows update checks/downloads through GitHub and GitHub's release-asset CDN. Automatic update checks can be disabled in Settings. No GitHub login is needed by application users.
+## Közzététel
+
+1. A forrás és a verziók ellenőrzése, platformnak megfelelő tesztekkel.
+2. A kiadási mellékletek és metaadatok tartalmi, aláírási és SHA256-ellenőrzése.
+3. Privát adatok, hitelesítő adatok és kulcsok kizárása a forrásból és csomagokból.
+4. Feltöltés először draftként; nyilvánossá tétel csak teljes, ellenőrzött mellékletkészlettel.
+5. A nyilvános mellékletek és a frissítési csatorna visszaellenőrzése.
+
+A nyilvános mellékleteket nem írjuk felül új tartalommal. A Windows és Android külön tag-/frissítési csatornát használ; Androidnál `make_latest=false` kötelező, hogy a Windows-frissítő továbbra is a Windows-kiadást kapja.
+
+Karbantartó: [@x10ilaci](https://github.com/x10ilaci). Biztonsági hibához: [SECURITY.md](SECURITY.md).

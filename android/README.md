@@ -1,9 +1,15 @@
-# SynoStream Android 0.5.24
+# SynoStream Android
 
-Release APK, versionCode 29. Azonos aláírással telepíthető a korábbi verzió fölé; az adatok megmaradnak.
+Synology NAS-on tárolt filmek és sorozatok böngészése, TMDB-médiainformációk, médiatárankénti ajánló, külső videólejátszó indítása és Download Station-kezelés. Magyar és angol felülettel, Android 8.0-tól.
 
-Kiadás: https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.24
+**[Android 0.5.24 release APK letöltése](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk)** · [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.24)
 
-Terjesztéshez kizárólag a build_release.ps1 által előállított és a verify_release.py által ellenőrzött APK használható. Az assembleDebug kimenete nem publikálható.
+A kész APK-hoz nem kell Android Studio vagy Java-fejlesztőkörnyezet. Azonos aláírással a korábbi verzió fölé telepíthető; frissítés előtt ne távolítsd el a régi appot.
 
-A privát aláírókulcs nincs a forráscsomagban. A meglévő tanúsítvány neve történeti okból Android Debug; az APK ettől függetlenül release build, debuggable=false. Új kulcsra váltás külön migrációt igényelne, ezért a jelenlegi kiadás nem cserél kulcsot.
+[Projektfőoldal](../README.md) · [Telepítés és NAS-beállítás](../docs/INSTALL.md) · [Gyakori kérdések](../docs/FAQ.md) · [Forrásból fordítás](../docs/DEVELOPMENT.md#android-forrásból)
+
+## Kiadás készítése
+
+Nyilvános terjesztéshez kizárólag a `build_release.ps1` által előállított, `verify_release.py` által ellenőrzött APK használható. Az `assembleDebug` kimenete nem publikálható. A meglévő aláírókulcs szükséges a hivatalos frissítési csatornához, és nem része a forrásnak.
+
+[Kiadási csatorna](UPDATE_CHANNEL.md) · [Kiadási szabályok](AGENTS.md) · [Aláírási politika](../CODE_SIGNING_POLICY.md) · [Legutóbbi ellenőrzés](ELLENORZES.md)

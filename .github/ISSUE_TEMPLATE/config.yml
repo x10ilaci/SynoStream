@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Telepítés és használat
+    url: https://github.com/x10ilaci/SynoStream/blob/main/docs/INSTALL.md
+    about: Windows- és Android-telepítés, NAS-kapcsolat, frissítés.
+  - name: Privát biztonsági bejelentés
+    url: https://github.com/x10ilaci/SynoStream/security/advisories/new
+    about: Sérülékenységet vagy hitelesítőadat-szivárgást ne nyilvános hibajegyben jelents.

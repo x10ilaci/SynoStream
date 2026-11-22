@@ -1,0 +1,64 @@
+name: Hibajelentés / Bug report
+description: Működési vagy telepítési hiba Windows vagy Android alatt.
+title: "[Hiba]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Köszönjük a jelzést! Jelszót, API-kulcsot, OTP-t, NAS-SID-et vagy teljes privát naplót ne küldj. Biztonsági hibához használd a Security / Report a vulnerability lehetőséget."
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Android
+        - Mindkettő / Both
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SynoStream-verzió
+      placeholder: "Például Windows 1.106 vagy Android 0.5.24"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operációs rendszer
+      placeholder: "Például Windows 11 vagy Android 15"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Kapcsolat / forrás
+      options:
+        - Nem kapcsolati hiba / Not connection related
+        - Helyi fájl vagy hálózati meghajtó / Local file or network drive
+        - Helyi NAS / Local NAS
+        - DDNS vagy közvetlen NAS-cím / DDNS or direct NAS
+        - QuickConnect
+        - Nem tudom / Unknown
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reprodukció lépései
+      description: Mit kell tenni, hogy előjöjjön a hiba? Magyarul vagy angolul is írhatod.
+      placeholder: |
+        1. Megnyitom…
+        2. Rákattintok…
+        3. Ezt látom…
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Várt és tényleges működés
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Hibaüzenet és további részletek
+      description: Pontos hibaüzenet vagy személyes adatoktól megtisztított képernyőkép. Teljes konfigurációt vagy nyers privát naplót ne mellékelj.

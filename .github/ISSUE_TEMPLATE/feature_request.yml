@@ -1,0 +1,27 @@
+name: Fejlesztési ötlet / Feature request
+description: Új funkció vagy használhatósági javaslat.
+title: "[Ötlet]: "
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Érintett platform
+      options:
+        - Windows
+        - Android
+        - Mindkettő / Both
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Milyen problémát oldana meg?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Javasolt működés
+      description: Mit csinálna a felhasználó, és mit várna az alkalmazástól?
+    validations:
+      required: true
