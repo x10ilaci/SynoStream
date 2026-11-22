@@ -1,11 +1,13 @@
 # Android release channel
 
-Current APKs are published in this repository under separate `android-vX.Y.Z` release tags. Desktop tags remain `vX.Y`; Android releases must use `make_latest=false` so the existing Windows update channel stays intact.
+Stable feed: https://raw.githubusercontent.com/x10ilaci/SynoStream/main/android/update.json
 
-Stable metadata URL: https://raw.githubusercontent.com/x10ilaci/SynoStream/main/android/update.json
+Use android-vX.Y.Z tags and make_latest=false; Windows remains the repository latest release.
 
-The metadata includes application ID, monotonically increasing version_code, version, minimum SDK, immutable release asset URL, byte size, SHA256 and signing certificate SHA256. The identical metadata is also attached to each Android release as android-update.json.
+From 0.5.24, public APKs must be built with assembleRelease (build_release.ps1 runs the release tests and lint). verify_release.py MUST pass before upload: expected package/version, debuggable=false, testOnly=false, valid signature, unchanged pinned certificate and valid ZIP. assembleDebug outputs are never distribution artifacts.
 
-Since 0.5.19 the app consumes this feed for startup and manual update checks. The updater checks the application ID, installed versionCode, HTTPS origin, download size/hash and APK signing certificate before requesting installation through Android. Installation requires Android's user confirmation and permission to install from this source; do not promise silent updates.
+The current signing key is retained for in-place upgrades. Its certificate has the historical Android Debug subject name; that name is distinct from the APK debug flag. No signing key or password is shipped in source or release assets. A certificate change requires a separate migration plan.
 
-APK signing keys are private and are not in the repository or source ZIP. Existing installations use the current debug certificate shown in update.json; preserve that key for updates to those installations. A build signed with another key cannot replace those installations.
+The feed includes the immutable APK URL, byte size, SHA256, monotonically increasing version_code and pinned signing certificate. Android still requires user permission and installation confirmation.
+
+A correct release build does not guarantee a Play Protect classification. A harmful-app warning must be investigated separately and, if erroneous, appealed through Google's official process.

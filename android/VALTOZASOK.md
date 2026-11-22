@@ -1,9 +1,6 @@
-# SynoStream Android 0.5.23
+# SynoStream Android 0.5.24
 
-- A párosításmentés külön zárral és esemény-gyorsítótárral dolgozik; hálózati várakozás közben nem fogja a kliens közös monitorát.
-- A párhuzamos stream- és feltöltési kérések csak egyszer újítják meg a lejárt munkamenetet.
-- Pontosabb sample-felismerés; a médiatár és a kártya saját neve nem kizáró ok.
-- Nyilvános HTTP-címekhez egyszer elfogadható figyelmeztetés; a HTTP továbbra is használható.
-- Külön hibajelzés a biztosan elutasított és a bizonytalan eredményű törléshez; megszakításkor nincs újabb törlési köteg.
-- Záró perjelre normalizált fizikai útvonalak, változatlan szigorú ellenőrzéssel.
-- A stream tokenje és útvonala együtt cserélődik; a beolvasás elutasított indítása nem hagy beragadt állapotot.
+- A nyilvános APK immár release változat, kikapcsolt Java- és natív hibakereséssel; nem tesztcsomag.
+- A korábbi aláírókulcs megmaradt, így a meglévő telepítés frissíthető az alkalmazásadatok elvesztése nélkül.
+- Új kiadási ellenőrzés tiltja a hibakereshető vagy testOnly APK közzétételét, és ellenőrzi az alkalmazásazonosítót, verziót és tanúsítványt.
+- A Play Protect minősítését ez önmagában nem garantálja; azt a Google külön végzi.

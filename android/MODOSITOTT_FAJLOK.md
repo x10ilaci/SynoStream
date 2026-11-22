@@ -1,22 +1,12 @@
-# Módosított források – Android 0.5.23
+# Android 0.5.24 – módosított fájlok
 
+- AGENTS.md
 - app\build.gradle
-- app\src\main\java\hu\synostream\android\ConnectionSettingsUi.java
-- app\src\main\java\hu\synostream\android\HttpConsent.java
-- app\src\main\java\hu\synostream\android\HttpConsentUi.java
-- app\src\main\java\hu\synostream\android\MainActivity.java
-- app\src\main\java\hu\synostream\android\MediaDeletion.java
-- app\src\main\java\hu\synostream\android\NasClient.java
-- app\src\main\java\hu\synostream\android\ScanSubmission.java
-- app\src\main\java\hu\synostream\android\StreamIdentity.java
-- app\src\main\java\hu\synostream\android\StreamService.java
-- app\src\main\java\hu\synostream\android\SynoApp.java
-- app\src\test\java\hu\synostream\android\ClaudeReviewTest.java
-- app\src\test\java\hu\synostream\android\MediaDeletionTest.java
-- app\src\test\java\hu\synostream\android\NasAddressTest.java
-- app\src\test\java\hu\synostream\android\NasClientConcurrencyTest.java
+- build_release.ps1
 - ELLENORZES.md
-- JAVITASOK_ES_ELLENORZES.md
-- MODOSITOTT_FORRASOK.txt
+- MODOSITOTT_FAJLOK.md
+- publish_android.py
 - README.md
+- UPDATE_CHANNEL.md
 - VALTOZASOK.md
+- verify_release.py

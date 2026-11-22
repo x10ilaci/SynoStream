@@ -2,13 +2,16 @@
   "format": 1,
   "platform": "android",
   "application_id": "hu.synostream.android",
-  "version": "0.5.23",
-  "version_code": 28,
+  "version": "0.5.24",
+  "version_code": 29,
   "min_sdk": 26,
-  "filename": "SynoStream_Android_0.5.23.apk",
-  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.23/SynoStream_Android_0.5.23.apk",
-  "sha256": "b05e2e17a674a71aea2aadc118da95049f94deedab967ba87f376719b26c36d2",
-  "size": 1030873,
+  "filename": "SynoStream_Android_0.5.24.apk",
+  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk",
+  "sha256": "5875e6643f4120691e3cb61804c066e5e13ccdd54985489e86044676bfb6ed63",
+  "size": 837790,
   "signing_certificate_sha256": "993702ff90412c5aefcb43797d67adccb7bcdf62969f215fb92e9a5c52bca857",
-  "notes": "# SynoStream Android 0.5.23\n\n- A párosításmentés külön zárral és esemény-gyorsítótárral dolgozik; hálózati várakozás közben nem fogja a kliens közös monitorát.\n- A párhuzamos stream- és feltöltési kérések csak egyszer újítják meg a lejárt munkamenetet.\n- Pontosabb sample-felismerés; a médiatár és a kártya saját neve nem kizáró ok.\n- Nyilvános HTTP-címekhez egyszer elfogadható figyelmeztetés; a HTTP továbbra is használható.\n- Külön hibajelzés a biztosan elutasított és a bizonytalan eredményű törléshez; megszakításkor nincs újabb törlési köteg.\n- Záró perjelre normalizált fizikai útvonalak, változatlan szigorú ellenőrzéssel.\n- A stream tokenje és útvonala együtt cserélődik; a beolvasás elutasított indítása nem hagy beragadt állapotot.\n"
+  "build_type": "release",
+  "debuggable": false,
+  "test_only": false,
+  "notes": "# SynoStream Android 0.5.24\n\n- A nyilvános APK immár release változat, kikapcsolt Java- és natív hibakereséssel; nem tesztcsomag.\n- A korábbi aláírókulcs megmaradt, így a meglévő telepítés frissíthető az alkalmazásadatok elvesztése nélkül.\n- Új kiadási ellenőrzés tiltja a hibakereshető vagy testOnly APK közzétételét, és ellenőrzi az alkalmazásazonosítót, verziót és tanúsítványt.\n- A Play Protect minősítését ez önmagában nem garantálja; azt a Google külön végzi.\n"
 }

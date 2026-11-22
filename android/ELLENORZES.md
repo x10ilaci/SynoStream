@@ -1,9 +1,13 @@
-# Ellenőrzés – SynoStream Android 0.5.23
+# Ellenőrzés – SynoStream Android 0.5.24
 
-632 JVM-regressziós teszt sikeres, 0 hiba. lintDebug: 0 hiba, 17 korábbi figyelmeztetés. A fordítás és az APK-aláírás ellenőrzése sikeres; az aláíró tanúsítvány egyezik a korábbi kiadásokéval.
+A build_release.ps1 a testReleaseUnitTest, lintRelease és assembleRelease feladatokat futtatja. 632 release JVM-teszt sikeres; lint 0 hiba, 17 korábbi figyelmeztetés.
 
-A javítások mock/fake NAS-on vizsgálják a párhuzamos munkamenet-megújítást, a párosítási olvasás alatti párhuzamos lekérést, az esemény-cache-t, a sample-szabályokat, az útvonalellenőrzést, a törlési hibakategóriákat és a részleges/megszakított törlést.
+Az elkészült APK tényleges manifestjét és aláírását a verify_release.py ellenőrzi: application_id hu.synostream.android, versionCode 29, versionName 0.5.24, debuggable=false, testOnly=false. Az aláírás érvényes és egyezik a korábbi telepítések tanúsítványával. A 0.5.23 debug APK elutasításával az ellenőrzés negatív ága is tesztelt.
 
-A manifest, SDK, függőségek és az aláírási konfiguráció változatlan. Az app/build.gradle kizárólag versionCode 28 / versionName 0.5.23 értékekben változott. A védett felismerési/cache/frissítési modulok változatlanok.
+A tanúsítvány történeti neve Android Debug; a kulcsot a kompatibilis frissítéshez tartjuk meg. Ez nem teszi hibakereshetővé a release változatot. Nincs új privát kulcs a nyilvános csomagban, és nincs kulcscsere.
 
-API 36 emulátoron a telepítés, az indulás és a NAS nélküli demó megnyitása sikeres; nem volt alkalmazásösszeomlás. A hidegindításkor megakadt Android System UI a Várakozás után helyreállt; ez nem a SynoStream folyamata. A telepített és visszaolvasott APK byte-ra egyezik a kiadott APK-val. A korábbi 0.5.22 teljes, 125 esetből álló emulátoros körét erre a verzióra nem ismételtük meg. Fizikai telefonon, valódi DSM-OTP-val vagy NAS-törléssel nem teszteltük. Valódi NAS-adatot nem módosítottunk.
+A publish_android.py minden feltöltés előtt újra lefuttatja az APK-ellenőrzést, összeveti a feed metaadatait és SHA256-értékét, majd ellenőrzi az összes mellékletet. Android-kiadás nem válthatja le a Windows latest kiadást.
+
+API 36 emulátoron a 0.5.23 debug változat fölé telepítettük a 0.5.24 release APK-t. A privát tesztadat megmaradt, a versionCode 28-ról 29-re nőtt, a run-as az új csomagot helyesen visszautasította mint nem hibakereshető alkalmazást. A telepített APK visszaolvasva byte-ra egyezik a kiadási fájllal.
+
+A Google Play Protect minősítése ettől külön áll. A release build és a sikeres tesztek nem garantálják a korábbi tiltás megszűnését. Fizikai telefonos Play Protect-próba nem történt.
