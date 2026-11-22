@@ -1,9 +1,9 @@
-# Ellenőrzés – Android 0.5.22
+# Ellenőrzés – SynoStream Android 0.5.23
 
-618 JVM teszt sikeres; lint 0 hiba, 17 korábbi figyelmeztetés.
+632 JVM-regressziós teszt sikeres, 0 hiba. lintDebug: 0 hiba, 17 korábbi figyelmeztetés. A fordítás és az APK-aláírás ellenőrzése sikeres; az aláíró tanúsítvány egyezik a korábbi kiadásokéval.
 
-32 Android-tesztosztály: 121 sikeres, 4 feltételes kihagyás, 0 hiba. Az első kör három sikertelen esetét az emulátor indulási elakadása és a felületi próbával párhuzamos, tesztállapotot átíró automatikus beolvasás okozta; a felületi tesztekben a beolvasást kikapcsoltuk, az automatikus működés tesztjében külön bekapcsoltuk. Az érintett teljes csoportok sikeres ismétlése szerepel a végső összesítésben. A tiltott telepítési engedély ága külön további 1/1 sikeres. Élő NAS-t igénylő tesztet nem indítottunk. Valódi NAS-on törlés, fizikai telefon és mobilhálózati forgalom nem volt tesztelve.
+A javítások mock/fake NAS-on vizsgálják a párhuzamos munkamenet-megújítást, a párosítási olvasás alatti párhuzamos lekérést, az esemény-cache-t, a sample-szabályokat, az útvonalellenőrzést, a törlési hibakategóriákat és a részleges/megszakított törlést.
 
-Az ajánló korábban átírt cache-válaszait újratölti a visszajelzések elvesztése nélkül; lejárt fordítást nem alkalmaz és a lokalizált leírásokat is korlátozza. Ezek külön regressziós teszteket kaptak.
+A manifest, SDK, függőségek és az aláírási konfiguráció változatlan. Az app/build.gradle kizárólag versionCode 28 / versionName 0.5.23 értékekben változott. A védett felismerési/cache/frissítési modulok változatlanok.
 
-A védett modulok, manifest, SDK, függőségek, aláírási beállítások és Vissza-kezelés változatlanok. A frissítési csatorna a közzététel után külön ellenőrzést kap.
+API 36 emulátoron a telepítés, az indulás és a NAS nélküli demó megnyitása sikeres; nem volt alkalmazásösszeomlás. A hidegindításkor megakadt Android System UI a Várakozás után helyreállt; ez nem a SynoStream folyamata. A telepített és visszaolvasott APK byte-ra egyezik a kiadott APK-val. A korábbi 0.5.22 teljes, 125 esetből álló emulátoros körét erre a verzióra nem ismételtük meg. Fizikai telefonon, valódi DSM-OTP-val vagy NAS-törléssel nem teszteltük. Valódi NAS-adatot nem módosítottunk.

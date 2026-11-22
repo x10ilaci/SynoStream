@@ -9,11 +9,11 @@ import pytest
 from synostream_storage import acquire_application_lock
 
 ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / 'SynoStream_1.105.py'
+APP = ROOT / 'SynoStream_1.106.py'
 BOOT = '''import os,sys,importlib.util
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
-spec=importlib.util.spec_from_file_location('probe',Path(sys.argv[1])/'SynoStream_1.105.py')
+spec=importlib.util.spec_from_file_location('probe',Path(sys.argv[1])/'SynoStream_1.106.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 sys.excepthook=sys.__excepthook__
 root=Path(m.BASE_DIR)

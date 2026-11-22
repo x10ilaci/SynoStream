@@ -1,3 +1,4 @@
+import logging
 """Metadata-only Download Station preparation, followed by an explicit selected-file start."""
 import json
 import logging
@@ -131,7 +132,7 @@ class TorrentSelectionMixin:
                     try:
                         self.discard_prepared(identifier)
                     except Exception:
-                        pass
+                        logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: prepare. A korábbi adatokat vagy állapotot ellenőrizni kell.')
                 raise
 
     def discard_prepared(self, list_id):

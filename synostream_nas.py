@@ -1,5 +1,6 @@
 """One NAS identity over local API, DDNS HTTPS and QuickConnect fallback."""
 from urllib.parse import urlsplit, urlunsplit
+import re
 import threading
 import time
 import requests
@@ -24,7 +25,41 @@ def normalize_direct_url(value):
     return urlunsplit((parts.scheme, parts.netloc, '', '', ''))
 
 
+def validate_quickconnect_id(value):
+    value = str(value or '').strip()
+    if value and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', value):
+        raise ValueError('Érvénytelen QuickConnect-azonosító.')
+    return value
+
+
+def quickconnect_url(identifier, region=None):
+    identifier = validate_quickconnect_id(identifier)
+    if not identifier or (region is not None and not re.fullmatch(r'[a-z0-9-]+', str(region))):
+        raise ValueError('Érvénytelen QuickConnect-cím vagy régió.')
+    value = f"https://{identifier}{'.' + region if region else ''}.quickconnect.to"
+    parts = urlsplit(value)
+    if (parts.scheme != 'https' or parts.username is not None or parts.password is not None
+            or parts.port is not None or not parts.hostname.endswith('.quickconnect.to')
+            or parts.path or parts.query or parts.fragment):
+        raise ValueError('Érvénytelen QuickConnect-cím.')
+    return value
+
+
+def nas_json(response):
+    try:
+        payload = response.json()
+    except ValueError:
+        raise RuntimeError('A NAS nem értelmezhető JSON-választ adott.') from None
+    if not isinstance(payload, (dict, list)):
+        raise RuntimeError('A NAS nem értelmezhető JSON-választ adott.')
+    return payload
+
+
 class NASAuthenticationError(RuntimeError):
+    pass
+
+
+class NASOtpRequired(NASAuthenticationError):
     pass
 
 
@@ -59,7 +94,7 @@ class RemoteNASClient:
         password = self.credentials.get('nas_password') or ''
         local = normalize_local_url(self.credentials.get('nas_local_url'))
         direct = normalize_direct_url(self.credentials.get('nas_direct_url'))
-        quick = str(self.credentials.get('quickconnect_id') or '').strip()
+        quick = validate_quickconnect_id(self.credentials.get('quickconnect_id'))
         if not username or not password or not (local or direct or quick):
             raise RuntimeError('A NAS-kapcsolatnál adj meg legalább egy címet, felhasználónevet és jelszót.')
         routes = [('local', local), ('direct', direct), ('quickconnect', quick)]
@@ -85,7 +120,7 @@ class RemoteNASClient:
                     }, timeout=(2, 4) if route == 'local' else (3, 5))
                     try:
                         response.raise_for_status()
-                        payload = response.json()
+                        payload = nas_json(response)
                         info = payload.get('data') if isinstance(payload, dict) and payload.get('success') else None
                         if not isinstance(info, dict) or not all(isinstance(info.get(k), dict) and info[k] for k in
                                 ('SYNO.API.Auth','SYNO.FileStation.List','SYNO.FileStation.Download')):
@@ -102,19 +137,21 @@ class RemoteNASClient:
         raise RuntimeError('A NAS egyik beállított elérésen sem érhető el. Ellenőrizd a címeket, a hálózatot és a tanúsítványt.') from None
 
     def _discover_quickconnect(self, identifier):
+        identifier = validate_quickconnect_id(identifier)
+        if not identifier: raise ValueError("Hiányzó QuickConnect-azonosító.")
         r = self._connect_request("post", "https://global.quickconnect.to/Serv.php", json=[
             {"version": 1, "command": "get_server_info", "stop_when_error": False,
              "stop_when_success": False, "id": "dsm_portal_https", "serverID": identifier, "is_gofile": False}
         ], timeout=(8, 15))
         r.raise_for_status()
         bases = []
-        for item in r.json() if isinstance(r.json(), list) else []:
+        for item in nas_json(r) if isinstance(nas_json(r), list) else []:
             env = item.get("env") or {}
             if item.get("errno") == 0 and env.get("relay_region"):
-                bases.append(f"https://{identifier}.{env['relay_region']}.quickconnect.to")
+                bases.append(quickconnect_url(identifier, env['relay_region']))
         last_error = None
         api_data = None
-        self.session.headers.update({"User-Agent": "Mozilla/5.0 SynoStream/1.0", "Referer": f"https://{identifier}.quickconnect.to/"})
+        self.session.headers.update({"User-Agent": "Mozilla/5.0 SynoStream/1.0", "Referer": quickconnect_url(identifier) + "/"})
         for base in dict.fromkeys(bases):
             try:
                 self._connect_request("get", base, timeout=(8, 15)).raise_for_status()
@@ -136,15 +173,18 @@ class RemoteNASClient:
         auth=info.get("SYNO.API.Auth") or {}
         self.auth_url=self._endpoint(auth.get("path") or "auth.cgi")
         self.auth_version=auth.get("maxVersion") or 6
+        otp = self.credentials.pop("otp_code", "")
         login=self._connect_request("post", self.auth_url, data={"api":"SYNO.API.Auth", "version":self.auth_version,
-            "method":"login", "account":username, "passwd":password, "session":self.session_name, "format":"sid"}, timeout=(8,20))
+            "method":"login", "account":username, "passwd":password, "session":self.session_name, "format":"sid", **({"otp_code":otp} if otp else {})}, timeout=(8,20))
         try:
-            login.raise_for_status(); payload=login.json()
+            login.raise_for_status(); payload=nas_json(login)
         finally:
             login.close()
         if not isinstance(payload, dict):
             raise ValueError("Érvénytelen NAS-válasz.")
         if not payload.get("success"):
+            if (payload.get("error") or {}).get("code") == 403:
+                raise NASOtpRequired("Kétlépcsős kód szükséges: A NAS egyszer használatos kétlépcsős kódot kér.")
             raise NASAuthenticationError(f"NAS-bejelentkezés sikertelen (DSM-hibakód: {(payload.get('error') or {}).get('code','ismeretlen')}).")
         self.sid=(payload.get("data") or {}).get("sid", "")
         li=info.get("SYNO.FileStation.List") or {}; dl=info.get("SYNO.FileStation.Download") or {}
@@ -194,7 +234,8 @@ class RemoteNASClient:
         return self._request('post', url, **kwargs)
 
     def _connect_request(self, method, url, **kwargs):
-        for attempt in range(1 if self.transport in ('local', 'direct') else 3):
+        attempts = 1 if self.transport in ('local', 'direct') or (kwargs.get('data') or {}).get('otp_code') else 3
+        for attempt in range(attempts):
             self._check_cancelled()
             try:
                 if self.transport in ('local', 'direct'):
@@ -209,7 +250,7 @@ class RemoteNASClient:
             except requests.exceptions.SSLError:
                 raise RuntimeError("A NAS tanúsítványa nem ellenőrizhető. Ellenőrizd a tanúsítványt és a rendszerórát.") from None
             except (requests.ConnectionError, requests.Timeout):
-                if attempt == 2 or self.transport in ('local', 'direct'):
+                if attempt == attempts - 1:
                     raise RuntimeError("A NAS nem érhető el. Ellenőrizd az internetkapcsolatot és a QuickConnect-azonosítót.") from None
                 self._pause(0.5 * 2 ** attempt)
 
@@ -231,12 +272,16 @@ class RemoteNASClient:
                 self._check_cancelled()
                 try:
                     params = dict(api=api, version=version, method=method, _sid=self.sid, **kwargs)
-                    response = self._get(self.list_url, params=params, timeout=(8, 30))
+                    info = getattr(self, "api_info", {}).get(api) or {}
+                    endpoint = self._endpoint(info["path"]) if info.get("path") else self.list_url
+                    response = self._get(endpoint, params=params, timeout=(8, 30))
                     try:
                         response.raise_for_status()
-                        payload = response.json()
+                        payload = nas_json(response)
                     finally:
                         response.close()
+                    if not isinstance(payload, dict):
+                        raise RuntimeError("A NAS nem értelmezhető API-választ adott.")
                     if payload.get("success"):
                         return payload.get("data") or {}
                     code = (payload.get("error") or {}).get("code")
@@ -285,32 +330,37 @@ class RemoteNASClient:
                 return entries
 
     def open_stream(self, path, headers=None):
-        # Retry only before forwarding bytes. MPV handles recovery of an interrupted body.
-        with self.lock:
-            for attempt in range(3):
-                try:
-                    response = self._get(self.download_url, params={
-                        "api": "SYNO.FileStation.Download", "version": self.download_version,
-                        "method": "download", "path": path, "mode": "open", "_sid": self.sid,
-                    }, headers=headers or {}, stream=True, timeout=(15, 60))
-                    if "json" in response.headers.get("Content-Type", "").lower():
-                        try:
-                            code = (response.json().get("error") or {}).get("code")
-                        finally:
-                            response.close()
-                        if code in (106, 107, 119) and attempt == 0:
-                            self.connect()
-                            continue
-                        raise RuntimeError("NAS-stream munkamenet- vagy jogosultsághiba (DSM: %s)." % code)
-                    if response.status_code in (429, 502, 503, 504) and attempt < 2:
+        # Network waits and retry delays must not hold the session-state lock.
+        for attempt in range(3):
+            self._check_cancelled()
+            with self.lock:
+                url, sid, version = self.download_url, self.sid, self.download_version
+            try:
+                response = self._request('get', url, params={
+                    "api": "SYNO.FileStation.Download", "version": version,
+                    "method": "download", "path": path, "mode": "open", "_sid": sid,
+                }, headers=headers or {}, stream=True, timeout=(15, 60))
+                if "json" in response.headers.get("Content-Type", "").lower():
+                    try:
+                        code = (nas_json(response).get("error") or {}).get("code")
+                    finally:
                         response.close()
-                        self._pause(0.5 * 2 ** attempt)
+                    if code in (106, 107, 119) and attempt == 0:
+                        with self.lock:
+                            if self.sid == sid: self.connect()
                         continue
-                    return response
-                except (requests.ConnectionError, requests.Timeout):
-                    if attempt == 2:
-                        raise
+                    raise RuntimeError("NAS-stream munkamenet- vagy jogosultsághiba (DSM: %s)." % code)
+                if response.status_code in (429, 502, 503, 504) and attempt < 2:
+                    response.close()
                     self._pause(0.5 * 2 ** attempt)
+                    continue
+                return response
+            except (requests.ConnectionError, requests.Timeout):
+                if attempt == 2: raise
+                if self.credentials.get('nas_local_url') or self.credentials.get('nas_direct_url'):
+                    with self.lock:
+                        if self.sid == sid: self.connect()
+                self._pause(0.5 * 2 ** attempt)
 
     def read_pairing(self, path):
         """Read bounded JSON file content, distinct from JSON API error envelopes."""
@@ -351,7 +401,7 @@ class RemoteNASClient:
                 response=self._connect_request('get',self.base_url+'/webapi/query.cgi',params={
                     'api':'SYNO.API.Info','version':1,'method':'query','query':api},timeout=(8,15))
                 try:
-                    payload=response.json();info=(payload.get('data') or {}).get(api)
+                    payload=nas_json(response);info=(payload.get('data') or {}).get(api)
                     if not payload.get('success') or not info:raise RuntimeError('A NAS nem támogatja a fájltörlést.')
                     self.api_info[api]=info
                 finally:response.close()
@@ -364,7 +414,7 @@ class RemoteNASClient:
                 try:
                     response=self._post(self._endpoint(info['path']),data={'api':api,'version':version,'method':'delete',
                         'path':json.dumps(values,ensure_ascii=False),'recursive':'false','_sid':self.sid},timeout=(8,120))
-                    try:response.raise_for_status();payload=response.json()
+                    try:response.raise_for_status();payload=nas_json(response)
                     finally:response.close()
                 except (requests.RequestException, ValueError, TypeError):
                     raise RuntimeError('A NAS-törlés eredménye nem igazolható. Frissítsd a médiatárat; nem ismételtem meg a műveletet.') from None
@@ -393,7 +443,7 @@ class RemoteNASClient:
                         params={"api":"SYNO.API.Info","version":1,"method":"query","query":api},timeout=(8,15))
                     try:
                         response.raise_for_status()
-                        result=response.json()
+                        result=nas_json(response)
                         info=(result.get('data') or {}).get(api) if result.get('success') else None
                     finally:response.close()
                     if info:self.api_info[api]=info
@@ -407,7 +457,7 @@ class RemoteNASClient:
                     "path":directory,"create_parents":"true","overwrite":"true"},
                     files={"file":(name,payload,"application/json")},timeout=(8,45))
                 try:
-                    response.raise_for_status();result=response.json()
+                    response.raise_for_status();result=nas_json(response)
                 finally:response.close()
                 if result.get('success'):return
                 code=(result.get('error') or {}).get('code')

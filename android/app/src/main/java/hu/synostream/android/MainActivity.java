@@ -91,6 +91,7 @@ public final class MainActivity extends Activity {
         }
         if(s.busy||s.downloadBusy||s.metadataBusy){toast(getString(R.string.msg_wait_for_the_current_operation_to_finish_1a9f47));return;}
         try{NasRoutes.plan(c,true);}catch(Exception invalid){toast(SynoApp.safeError(invalid));return;}
+        if(HttpConsentUi.require(this,c,()->connectProfile(profile,c,save,completed)))return;
         s.busy=true;s.status=getString(R.string.msg_connecting_to_the_nas_45317b);s.changed();View focus=getCurrentFocus();if(focus!=null)((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(focus.getWindowToken(),0);
         String startedNetwork=s.networkKey();boolean allowLocal=s.allowLocalNetwork();long editSession=s.connectionDraft.generation;
         s.profileIo.execute(()->{

@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 /** Opaque loopback HTTP bridge: external players never receive NAS credentials. */
 public final class StreamService extends Service {
     public static volatile Map<Long,Byte> audioPatch=Map.of();public static volatile Uri readyUri;public static volatile String readyPath="";
-    private volatile boolean running;private volatile String path="",token="";
+    private volatile boolean running;private volatile StreamIdentity identity=new StreamIdentity("","");
     private volatile long lastRequest;private final ScheduledExecutorService idle=Executors.newSingleThreadScheduledExecutor();
     private NasClient client;private ServerSocket server;
     private final Set<Socket> sockets=ConcurrentHashMap.newKeySet();
@@ -35,8 +35,9 @@ public final class StreamService extends Service {
         if(intent==null||"STOP".equals(intent.getAction())){stopSelf();return START_NOT_STICKY;}
         SynoApp app=(SynoApp)getApplication();client=app.client;
         if(client==null||!app.connectionReady()||server==null){stopSelf();return START_NOT_STICKY;}
-        lastRequest=android.os.SystemClock.elapsedRealtime();path=intent.getStringExtra("path");if(path==null||!path.startsWith("/")){stopSelf();return START_NOT_STICKY;}
-        byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);token=Base64.encodeToString(bytes,Base64.URL_SAFE|Base64.NO_PADDING|Base64.NO_WRAP);
+        lastRequest=android.os.SystemClock.elapsedRealtime();String path=intent.getStringExtra("path");if(path==null||!path.startsWith("/")){stopSelf();return START_NOT_STICKY;}
+        byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);String token=Base64.encodeToString(bytes,Base64.URL_SAFE|Base64.NO_PADDING|Base64.NO_WRAP);
+        identity=new StreamIdentity(path,token);
         audioPatch=Map.of();readyPath=path;readyUri=Uri.parse("http://127.0.0.1:"+server.getLocalPort()+"/media/"+token+"/"+Uri.encode(path.substring(path.lastIndexOf('/')+1)));
         return START_NOT_STICKY;
     }
@@ -45,7 +46,7 @@ public final class StreamService extends Service {
             InputStream in=socket.getInputStream();OutputStream out=socket.getOutputStream();
             String first=line(in);String[] request=first.split(" ");if(request.length!=3){reply(out,400);return;}
             boolean head=request[0].equals("HEAD");if(!head&&!request[0].equals("GET")){reply(out,405);return;}
-            String expected=token,current=path;String[] segments=request[1].split("/",5);
+            StreamIdentity snapshot=identity;String expected=snapshot.token,current=snapshot.path;String[] segments=request[1].split("/",5);
             if(segments.length<4||!segments[1].equals("media")||expected.isEmpty()||!MessageDigest.isEqual(segments[2].getBytes(StandardCharsets.UTF_8),expected.getBytes(StandardCharsets.UTF_8))){reply(out,403);return;}
             Map<Long,Byte> patch=audioPatch;String range=null;int total=0;
             while(true){String header=line(in);total+=header.length();if(total>32768){reply(out,431);return;}if(header.isEmpty())break;

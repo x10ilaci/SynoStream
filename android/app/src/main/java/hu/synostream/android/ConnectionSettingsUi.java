@@ -28,6 +28,7 @@ final class ConnectionSettingsUi {
  static String kind(MainActivity a,NasRoutes.Kind kind){switch(kind){case LOCAL:return a.getString(R.string.connection_mode_local);case DDNS:return a.getString(R.string.connection_mode_ddns);case QUICKCONNECT:return "QuickConnect";default:return a.getString(R.string.msg_direct_connection_51a846);}}
  static void check(MainActivity a,NasClient.Credentials c){
   try{NasRoutes.plan(c,true);if(c.user.isBlank()||c.password.isEmpty()){a.toast(a.getString(R.string.connection_required_fields));return;}}catch(Exception invalid){a.toast(SynoApp.safeError(invalid));return;}
+  if(HttpConsentUi.require(a,c,()->check(a,c)))return;
   ProgressDialog progress=new ProgressDialog(a);a.ownDialog(progress);progress.setMessage(a.getString(R.string.connection_checking));progress.setCancelable(true);AtomicBoolean cancelled=new AtomicBoolean();AtomicReference<Future<?>> job=new AtomicReference<>();
   progress.setOnDismissListener(d->{cancelled.set(true);Future<?> f=job.get();if(f!=null)f.cancel(true);});progress.show();boolean allowLocal=a.s.allowLocalNetwork();
   Future<?> future=a.s.profileIo.submit(()->{List<NasClient.ConnectionCheck> results=null;try{results=new NasClient(c.withoutOtp()).checkConnections(allowLocal);}catch(Exception unavailable){/* Canceled/invalid checks never affect the active connection. */}List<NasClient.ConnectionCheck> rows=results;a.s.main.post(()->{

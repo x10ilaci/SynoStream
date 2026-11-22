@@ -10,6 +10,7 @@ import java.util.*;
 public final class NasClient implements Library.Source {
     static final class OtpRequiredException extends SecurityException {OtpRequiredException(String message){super(message);}}
     public static final class ApiRejectedException extends IOException {ApiRejectedException(String message){super(message);}}
+    public static final class WriteUncertainException extends IOException {WriteUncertainException(String message){super(message);}}
     public static final class ResponseTooLargeException extends IOException {ResponseTooLargeException(){super("A válasz túl nagy.");}}
     public static final class Credentials {
         public final String address,local,ddns,quick,user,password,otp;
@@ -42,6 +43,8 @@ public final class NasClient implements Library.Source {
     // A stable facade is shared by scanner, playback and Download Station. Old in-flight
     // requests finish on their original session; only new calls use the replacement.
     private final Object connectionLock=new Object();
+    private final Object pairingWriteLock=new Object();
+    private final PairingReadCache pairingReads=new PairingReadCache();
     private volatile NasClient replacement;
     private volatile boolean suspended;
     private int connectionGeneration,retirementRevision;
@@ -103,7 +106,7 @@ public final class NasClient implements Library.Source {
             results.add(new ConnectionCheck(r.kind,result));
         }return results;
     }
-    static String sslMessage(Throwable error){String text=Objects.toString(error.getMessage(),"").toLowerCase(Locale.ROOT);if(text.contains("plaintext")||text.contains("unrecognized ssl message"))return "A NAS valószínűleg HTTP-n figyel. Add meg kifejezetten: http://cím:port";return "A NAS tanúsítványa nem ellenőrizhető. Használj érvényes HTTPS-címet, vagy kifejezetten megadott helyi HTTP-címet.";}
+    static String sslMessage(Throwable error){String text=Objects.toString(error.getMessage(),"").toLowerCase(Locale.ROOT);if(text.contains("plaintext")||text.contains("unrecognized ssl message"))return "A NAS ezen a porton nem HTTPS-választ adott. Ellenőrizd a HTTPS-portot és a címet.";return "A NAS tanúsítványa nem ellenőrizhető. Ellenőrizd a tanúsítványt, a HTTPS-címet és a rendszerórát. A nyilvános HTTP-kapcsolat nem titkosított.";}
     static String connectionRoute(boolean quick,boolean directFallback){return quick&&!directFallback?"QuickConnect":"Közvetlen kapcsolat";}
     static String directFallback(String address){return normalizeAddress(address);}
     private boolean tryConnect(String candidate) throws Exception {
@@ -172,7 +175,7 @@ public final class NasClient implements Library.Source {
     public Stream stream(String path,String range,boolean head) throws Exception {
         NasClient next=current();if(next!=null)return next.stream(path,range,head);
         for(int attempt=0;attempt<2;attempt++){
-            String url; synchronized(this){url=endpoint(apis.getJSONObject("SYNO.FileStation.Download").getString("path"))+"?"+form(Map.of("api","SYNO.FileStation.Download","version","2","method","download","path",path,"mode","open","_sid",sid));}
+            String url,usedSid; synchronized(this){usedSid=sid;url=endpoint(apis.getJSONObject("SYNO.FileStation.Download").getString("path"))+"?"+form(Map.of("api","SYNO.FileStation.Download","version","2","method","download","path",path,"mode","open","_sid",usedSid));}
             HttpURLConnection c=open(url,head?"HEAD":"GET",30000);if(range!=null)c.setRequestProperty("Range",range);
             int status=c.getResponseCode();storeCookies(c);
             if(!head&&c.getContentType()!=null&&c.getContentType().toLowerCase(Locale.ROOT).contains("json")){
@@ -180,7 +183,7 @@ public final class NasClient implements Library.Source {
                 JSONObject failure=downloadFailure(body);
                 if(failure==null){if(status!=200&&status!=206){c.disconnect();throw new IOException("A fájl nem olvasható (HTTP "+status+").");}return new Stream(c,new ByteArrayInputStream(body));}
                 c.disconnect();int code=failure.optJSONObject("error")==null?-1:failure.getJSONObject("error").optInt("code");
-                if(attempt==0&&(code==106||code==107||code==119)){synchronized(this){login();}continue;}
+                if(attempt==0&&(code==106||code==107||code==119)){synchronized(this){if(sid.equals(usedSid))login();}continue;}
                 throw new IOException("A NAS nem engedélyezi a fájl olvasását ("+code+").");
             }
             if(status!=200&&status!=206){c.disconnect();throw new IOException("A fájl nem olvasható (HTTP "+status+").");}
@@ -190,14 +193,17 @@ public final class NasClient implements Library.Source {
     }
     static JSONObject downloadFailure(byte[] body){try{JSONObject value=new JSONObject(new String(body,StandardCharsets.UTF_8));return Boolean.FALSE.equals(value.opt("success"))?value:null;}catch(JSONException notObject){return null;}}
     public byte[] readFile(String path,int limit) throws Exception {try(Stream s=stream(path,null,false)){return readBounded(s.body,limit);}}
-    public synchronized void savePairing(String root,String mediaPath,boolean movie,JSONObject info) throws Exception {
+    public void savePairing(String root,String mediaPath,boolean movie,JSONObject info) throws Exception {
+      synchronized(pairingWriteLock){
         NasClient next=current();if(next!=null){next.savePairing(root,mediaPath,movie,info);return;}
         String relative=MediaLogic.relative(root,mediaPath);
         if(!MediaLogic.safeRelative(relative)||relative.equals(".")&&movie||info.optLong("id")<=0)throw new IOException("A párosítás nem tartozik a kiválasztott médiatárhoz.");
         String directory=root+"/.synostream/parositasok";long generation=0;
         if(list(root).stream().anyMatch(e->e.directory&&e.name.equals(".synostream"))&&list(root+"/.synostream").stream().anyMatch(e->e.directory&&e.name.equals("parositasok"))){
             for(Entry entry:list(directory))if(!entry.directory&&entry.name.matches("[0-9a-f]{32}\\.json")&&entry.size<=16384){
-                JSONObject event=Pairings.validate(entry.name,readFile(entry.path,16384));
+                String owner; synchronized(this){owner=base+"|"+credentials.user;}
+                byte[] bytes=pairingReads.get(owner,entry);if(bytes==null){bytes=readFile(entry.path,16384);pairingReads.put(owner,entry,bytes);}
+                JSONObject event=Pairings.validate(entry.name,bytes);
                 if(event!=null&&event.optString("relative_path").equals(relative)&&event.optString("media_type").equals(movie?"movie":"tv"))generation=Math.max(generation,event.optLong("generation"));
             }
         }
@@ -208,22 +214,19 @@ public final class NasClient implements Library.Source {
         uploadEvent(directory,filename,payload);
         if(!java.security.MessageDigest.isEqual(payload,readFile(directory+"/"+filename,16384)))throw new IOException("A NAS-ra mentett párosítás nem ellenőrizhető. A helyi korrekció megmarad.");
     }
-    private synchronized void uploadEvent(String directory,String filename,byte[] payload) throws Exception {
+      }
+    private void uploadEvent(String directory,String filename,byte[] payload) throws Exception {
         if(!directory.endsWith("/.synostream/parositasok")||!filename.matches("[0-9a-f]{32}\\.json")||payload.length>16384)throw new IOException("Érvénytelen párosítási cél.");
         String api="SYNO.FileStation.Upload";
-        if(!apis.has(api)){
-            JSONObject discovery=json(base+"/webapi/query.cgi",Map.of("api","SYNO.API.Info","version","1","method","query","query",api),false);
-            JSONObject data=discovery.optJSONObject("data");if(!discovery.optBoolean("success")||data==null||!data.has(api))throw new IOException("A NAS nem támogatja a párosítás mentését.");
-            apis.put(api,data.getJSONObject(api));
-        }
         for(int attempt=0;attempt<2;attempt++){
+            ApiState state=apiState(api,2);
             String boundary="SynoStream"+UUID.randomUUID().toString().replace("-","");ByteArrayOutputStream body=new ByteArrayOutputStream();
-            Map<String,String> values=new LinkedHashMap<>();values.put("api",api);values.put("version","2");values.put("method","upload");values.put("_sid",sid);values.put("path",directory);values.put("create_parents","true");values.put("overwrite","true");
+            Map<String,String> values=new LinkedHashMap<>();values.put("api",api);values.put("version","2");values.put("method","upload");values.put("_sid",state.session);values.put("path",directory);values.put("create_parents","true");values.put("overwrite","true");
             for(Map.Entry<String,String> field:values.entrySet())body.write(("--"+boundary+"\r\nContent-Disposition: form-data; name=\""+field.getKey()+"\"\r\n\r\n"+field.getValue()+"\r\n").getBytes(StandardCharsets.UTF_8));
             body.write(("--"+boundary+"\r\nContent-Disposition: form-data; name=\"file\"; filename=\""+filename+"\"\r\nContent-Type: application/json\r\n\r\n").getBytes(StandardCharsets.UTF_8));body.write(payload);body.write(("\r\n--"+boundary+"--\r\n").getBytes(StandardCharsets.UTF_8));
-            JSONObject response=new JSONObject(new String(requestBytes(endpoint(apis.getJSONObject(api).getString("path")),"POST",body.toByteArray(),"multipart/form-data; boundary="+boundary,65536,45000),StandardCharsets.UTF_8));
+            JSONObject response=new JSONObject(new String(requestBytes(state.url,"POST",body.toByteArray(),"multipart/form-data; boundary="+boundary,65536,45000,state.server),StandardCharsets.UTF_8));
             if(response.optBoolean("success"))return;int code=response.optJSONObject("error")==null?-1:response.getJSONObject("error").optInt("code");
-            if(attempt==0&&(code==106||code==107||code==119)){login();continue;}
+            if(attempt==0&&(code==106||code==107||code==119)){synchronized(this){if(sid.equals(state.session))login();}continue;}
             throw new IOException("A NAS nem tudta menteni a párosítást ("+code+"). A helyi korrekció megmarad.");
         }
     }
@@ -253,17 +256,30 @@ public final class NasClient implements Library.Source {
         for(int attempt=0;attempt<2;attempt++){
             ApiState state=apiState(api,version);Map<String,String> values=new LinkedHashMap<>();values.put("api",api);values.put("method",method);values.put("version",String.valueOf(version));values.put("_sid",state.session);for(Map.Entry<String,String> param:params.entrySet())values.putIfAbsent(param.getKey(),param.getValue());JSONObject response;
             try{if(upload==null){String form=form(values);response=new JSONObject(new String(requestBytes(readonly?state.url+"?"+form:state.url,readonly?"GET":"POST",readonly?null:form.getBytes(StandardCharsets.UTF_8),"application/x-www-form-urlencoded",8*1024*1024,readTimeout,state.server,!readonly),StandardCharsets.UTF_8));}else{if(upload.length>32*1024*1024||filename==null||filename.contains("\r")||filename.contains("\n")||filename.contains("\""))throw new IOException("Érvénytelen torrentfájl.");String boundary="SynoStream"+UUID.randomUUID().toString().replace("-","");byte[] body=TorrentMultipart.encode(boundary,values,uploadField,filename,upload);response=new JSONObject(new String(requestBytes(state.url+"?"+form(Map.of("api",api,"method",method,"version",String.valueOf(version),"_sid",state.session)),"POST",body,"multipart/form-data; boundary="+boundary,8*1024*1024,60000,state.server,!readonly),StandardCharsets.UTF_8));}}
-            catch(Exception e){if(readonly&&attempt==0)continue;throw new IOException(readonly?"A Download Station most nem érhető el. A korábbi lista megmaradt.":"Nem érkezett biztos NAS-visszaigazolás. Ellenőrizd a feladatlistát; a műveletet nem ismételtem meg automatikusan.");}
+            catch(InterruptedException e){Thread.currentThread().interrupt();throw e;}
+            catch(Exception e){if(readonly&&attempt==0)continue;if(!readonly)throw new WriteUncertainException("Nem érkezett biztos NAS-visszaigazolás; a műveletet nem ismételtem meg automatikusan.");throw new IOException(readonly?"A Download Station most nem érhető el. A korábbi lista megmaradt.":"Nem érkezett biztos NAS-visszaigazolás. Ellenőrizd a feladatlistát; a műveletet nem ismételtem meg automatikusan.");}
             if(response.optBoolean("success")){Object data=response.opt("data");if(data instanceof JSONArray){JSONArray rows=(JSONArray)data;for(int i=0;i<rows.length();i++)if(rows.getJSONObject(i).optInt("error")!=0)throw new IOException("Néhány feladat művelete nem sikerült. Frissítsd a listát.");return new JSONObject();}return data instanceof JSONObject?(JSONObject)data:new JSONObject();}
-            int code=response.optJSONObject("error")==null?-1:response.getJSONObject("error").optInt("code");if(attempt==0&&(code==106||code==107||code==119)){synchronized(this){if(!base.equals(state.server))throw new IOException("A NAS-munkamenet lejárt.");if(sid.equals(state.session))login();}continue;}throw new ApiRejectedException(code==101?"A NAS érvénytelen kérési paramétert jelzett (101; "+downloadOperation(api,method)+"). A műveletet nem ismételtem meg automatikusan.":"A Download Station-művelet nem sikerült ("+code+"). Ellenőrizd a NAS jogosultságait és a feladatlistát.");
+            int code=response.optJSONObject("error")==null?-1:response.getJSONObject("error").optInt("code");if(attempt==0&&(code==106||code==107||code==119)){synchronized(this){if(!base.equals(state.server))throw new IOException("A NAS-munkamenet lejárt.");if(sid.equals(state.session))login();}continue;}throw new ApiRejectedException(api.equals("SYNO.FileStation.Delete")?"A NAS elutasította a törlést (DSM: "+code+"). Ellenőrizd a törlési jogosultságot.":code==101?"A NAS érvénytelen kérési paramétert jelzett (101; "+downloadOperation(api,method)+"). A műveletet nem ismételtem meg automatikusan.":"A Download Station-művelet nem sikerült ("+code+"). Ellenőrizd a NAS jogosultságait és a feladatlistát.");
         }throw new IOException("A NAS-munkamenet lejárt.");
     }
 
     public void deleteMediaPaths(List<String> paths)throws Exception {
-        if(paths.isEmpty()||paths.size()>64)throw new IOException("Érvénytelen törlési fájllista.");
-        for(String path:paths)if(MediaDeletion.path(path).substring(1).split("/").length<2||MediaDeletion.blocked(path))throw new IOException("Megosztás vagy védett mappa nem törölhető.");
-        try{NasClient next=current();if(next!=null){next.deleteMediaPaths(paths);return;}String api="SYNO.FileStation.Delete";apiState(api,1);int version;synchronized(this){JSONObject info=apis.getJSONObject(api);version=deleteVersion(info.optInt("minVersion",1),info.optInt("maxVersion",1));}JSONObject result=apiRequest(api,"delete",version,false,Map.of("path",new JSONArray(paths).toString(),"recursive","false"),null,null,null,DELETE_READ_TIMEOUT);JSONArray errors=result.optJSONArray("errors");if(errors!=null&&errors.length()>0)throw new IOException("Részleges törlési hiba.");}
-        catch(Exception error){throw new IOException("A NAS-törlés eredménye nem igazolható. Frissítsd a médiatárat; a műveletet nem ismételtem meg automatikusan.");}
+        String api="SYNO.FileStation.Delete";int version=0;NasClient next;
+        try{
+            if(Thread.currentThread().isInterrupted())throw new InterruptedException();
+            if(paths.isEmpty()||paths.size()>64)throw new IOException("Érvénytelen törlési fájllista.");
+            for(String path:paths)if(MediaDeletion.path(path).substring(1).split("/").length<2||MediaDeletion.blocked(path))throw new IOException("Megosztás vagy védett mappa nem törölhető.");
+            next=current();
+            if(next==null){apiState(api,1);synchronized(this){JSONObject info=apis.getJSONObject(api);version=deleteVersion(info.optInt("minVersion",1),info.optInt("maxVersion",1));}}
+        }catch(InterruptedException e){Thread.currentThread().interrupt();throw e;}
+        catch(Exception e){throw new IOException("A törlés nem indult el. "+e.getMessage(),e);}
+        if(next!=null){next.deleteMediaPaths(paths);return;}
+        try{
+            JSONObject result=apiRequest(api,"delete",version,false,Map.of("path",new JSONArray(paths).toString(),"recursive","false"),null,null,null,DELETE_READ_TIMEOUT);
+            JSONArray errors=result.optJSONArray("errors");if(errors!=null&&errors.length()>0)throw new IOException("A NAS részleges törlési hibát jelzett. Ellenőrizd a fájllistát.");
+        }catch(InterruptedException e){Thread.currentThread().interrupt();throw e;}
+        catch(ApiRejectedException e){throw new IOException("A törlés nem indult el. "+e.getMessage(),e);}
+        catch(WriteUncertainException e){throw new IOException("A NAS-törlés eredménye nem igazolható. Frissítsd a médiatárat; a műveletet nem ismételtem meg automatikusan.",e);}
     }
 
     private static String downloadOperation(String api,String method){if(api.equals("SYNO.DownloadStation2.Task")&&method.equals("create"))return "torrent előkészítése";if(api.equals("SYNO.DownloadStation2.Settings.Location")&&method.equals("get"))return "alapértelmezett célmappa lekérése";if(api.equals("SYNO.DownloadStation2.Task.List")&&method.equals("get"))return "torrent fájllistájának lekérése";if(api.equals("SYNO.DownloadStation2.Task.List.Polling")){if(method.equals("download"))return "kijelölt fájlok indítása";if(method.equals("download_status"))return "indítás visszaigazolása";}return "Download Station-kérés";}

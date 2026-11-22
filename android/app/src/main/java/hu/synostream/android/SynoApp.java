@@ -116,7 +116,7 @@ public final class SynoApp extends Application {
     void runScan(JSONObject library,Runnable progress,Runnable done,boolean force){
         if(scanRunning||client==null){done.run();return;}scanRunning=true;store.put("scan_pending",identity+"|"+library.optString("id"));List<String> paths=LibraryConfig.paths(library);if(paths.isEmpty()){status="Válassz forrást ehhez a médiatárhoz.";changed();scanRunning=false;busy=false;done.run();return;}
         boolean automatic=automaticLibraries.running(library.optString("id"));automaticScan=automatic;boolean displayedAtStart=selectedLibrary.equals(library.optString("id"));long startedCorrections=corrections.revision();int generation=epoch,token=++scanToken;NasClient connection=client;busy=true;status=UiText.context(this).getString(R.string.scan_discovering);changed();List<Library.Card> old=new ArrayList<>(rawCards);LocalEdits scanEdits=edits;String scanIdentity=identity;String scanLibraryJson=library.toString();String scanLibrariesJson=libraries.toString();scanBase=displayedAtStart?old:null;scanBaseLibrary=library.optString("id");scanBaseOwner=scanIdentity;scanBaseToken=token;
-        scanJob=scanner.submit(()->{
+        scanJob=ScanSubmission.submit(scanner,()->{
             try{
                 List<Library.Card> previous;try{previous=previousLibraryCards(new JSONObject(scanLibraryJson),scanIdentity);}catch(IOException|JSONException invalidCache){previous=new ArrayList<>();}
                 if(displayedAtStart)previous=old;
@@ -133,7 +133,7 @@ public final class SynoApp extends Application {
                 String summary=result.size()+" műsor • "+pairs+" kézi bejegyzés"+(errors>0?" • "+errors+" újrapróbálandó":"")+(invalid>0?" • "+invalid+" hibás párosítás":"");
                 main.post(()->{if(epoch==generation&&scanToken==token&&selectedLibrary.equals(library.optString("id"))){if(corrections.applyAfter(result,startedCorrections)){try{saveCache(new JSONObject(scanLibraryJson),result,scanIdentity);}catch(Exception ignored){}}scanBase=null;rawCards=result;cards=edits.apply(result,selectedLibrary);status=summary;changed();}});
             }catch(Exception e){String failure=safeError(e);main.post(()->{if(epoch==generation&&scanToken==token){rollbackPreview(token);status=failure;}});}finally{main.post(()->{if(epoch==generation&&scanToken==token){scanRunning=false;automaticScan=false;busy=false;automaticLibraries.complete(library.optString("id"),SystemClock.elapsedRealtime());changed();}done.run();});}
-        });
+        },()->{rollbackPreview(token);scanRunning=false;automaticScan=false;busy=false;automaticLibraries.complete(library.optString("id"),SystemClock.elapsedRealtime());status="A beolvasás nem indult el. Próbáld újra.";changed();done.run();});
     }
     Future<?> commitMediaDeletion(Library.Card selected,JSONObject library,MediaDeletion.Result result)throws Exception {
         Set<String> members=new HashSet<>(selected.memberPaths.isEmpty()?List.of(selected.path):selected.memberPaths);

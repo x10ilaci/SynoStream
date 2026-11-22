@@ -10,6 +10,7 @@ without importing the desktop UI or making network requests.
 # This file is part of SynoStream and is licensed under the GNU GPL version 3 only.
 # It is distributed without any warranty; see LICENSE for the complete terms.
 
+from datetime import date
 import os
 import re
 import unicodedata
@@ -27,8 +28,8 @@ NOISE_RE = re.compile(
     re.IGNORECASE,
 )
 LANGUAGE_TAG_RE = re.compile(r"(?i)\b(?:hun|eng|multi)\b")
-# 1900-2029; a "Blade Runner 2049" így nem évszám.
-YEAR_RE = re.compile(r"\b(19\d\d|20[0-2]\d)\b")
+# A távoli jövőbeli számok a cím részei maradnak.
+YEAR_RE = re.compile(r"\b([12]\d{3})\b")
 EPISODE_RANGE_RE = re.compile(
     r"(?i)(?:^|[^a-z0-9])E0*(\d{3,5})[ ._-]*[-–][ ._-]*E?0*(\d{3,5})(?=$|[^0-9])"
 )
@@ -61,6 +62,8 @@ def clean_name(name, is_file=True):
     year = None
     last = None
     for match in YEAR_RE.finditer(text):
+        if not 1900 <= int(match.group(1)) <= date.today().year + 2:
+            continue
         if text[:match.start()].strip(" -"):
             last = match
     if last:
@@ -140,7 +143,7 @@ def parse_episode_position(relative_path):
             season = parsed_season
             has_explicit_season = True
             continue
-        match = re.search(r"(?i)(?:^|[^a-z])S[ ._-]*0*(\d{1,2})(?:[^0-9]|$)", part)
+        match = re.search(r"(?i)(?:^|[^a-z])S[ ._-]*0*(\d{1,3})(?:[^0-9]|$)", part)
         if match:
             season = int(match.group(1))
             has_explicit_season = True
@@ -151,11 +154,16 @@ def parse_episode_position(relative_path):
         season = inline_season
         has_explicit_season = True
 
+    standalone = re.search(r"(?i)(?:^|[^a-z0-9])S0*(\d{1,3})(?![a-z0-9])", filename)
+    if standalone:
+        season = int(standalone.group(1))
+        has_explicit_season = True
+
     filename_range = EPISODE_RANGE_RE.search(filename)
     if filename_range:
         # A range in the filename describes a pack, not every child episode.
         # The UI assigns distinct fallback numbers using parse_episode_range_hint.
-        season_match = re.search(r"(?i)(?:^|[^a-z0-9])S[ ._-]*0*(\d{1,2})[ ._-]*E", filename)
+        season_match = re.search(r"(?i)(?:^|[^a-z0-9])S[ ._-]*0*(\d{1,3})[ ._-]*E", filename)
         if season_match:
             season = int(season_match.group(1))
         return season, None, False
@@ -182,7 +190,7 @@ def parse_episode_position(relative_path):
                 return season, range_start + number - 1, True
 
     episode_match = re.search(
-        r"(?i)S[ ._-]*0*(\d{1,2})[ ._-]*E[ ._-]*0*(\d{1,5})", normalized,
+        r"(?i)S[ ._-]*0*(\d{1,3})[ ._-]*E[ ._-]*0*(\d{1,5})", normalized,
     )
     if episode_match:
         return int(episode_match.group(1)), int(episode_match.group(2)), True
@@ -194,7 +202,7 @@ def parse_episode_position(relative_path):
         return season, int(absolute_episode.group(1)), True
 
     # Do not mistake a resolution such as 1280x720 for an episode marker.
-    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,2})\s*x\s*0*(\d{1,3})(?!\d)", normalized)
+    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,3})\s*x\s*0*(\d{1,3})(?!\d)", normalized)
     if episode_match:
         return int(episode_match.group(1)), int(episode_match.group(2)), True
 

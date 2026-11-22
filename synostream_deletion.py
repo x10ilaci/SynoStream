@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import json
 import posixpath as pp
 import re
-from synostream_logic import parse_episode_position
+from synostream_logic import parse_episode_position, is_sample_video
 
 VIDEO = {'.mkv','.mp4','.avi','.mov','.wmv','.m4v','.ts','.m2ts','.mpg','.mpeg','.webm'}
 AUX = {'.nfo','.srt','.ass','.ssa','.sub','.idx','.vtt','.sup','.jpg','.jpeg','.png','.txt','.sfv','.srr','.md5','.url','.torrent','.log'}
@@ -26,7 +26,15 @@ def within(value, root):
 
 def video(value): return pp.splitext(value)[1].lower() in VIDEO
 
-def sample(value): return 'sample' in value.casefold() or any(part.casefold() in {'extras','proof'} for part in pp.dirname(value).split('/'))
+def sample(value, card_roots=()):
+    name = pp.basename(value)
+    # A leading word followed by a title ("Sample Size") is not a release marker.
+    if is_sample_video(name) and not re.match(r'(?i)^sample[ ._-]+\S', pp.splitext(name)[0]): return True
+    anchors = [root for root in card_roots if within(value, root)]
+    if not anchors: return False
+    root = max(anchors, key=len)
+    return any(part.casefold() in {'sample','samples','extras','proof'}
+               for part in pp.dirname(value)[len(root):].strip('/').split('/'))
 
 def blocked(value): return any(part.casefold() in PROTECTED for part in value.split('/'))
 
@@ -61,6 +69,7 @@ class Inventory:
     def __init__(self, seeds, library_roots, movie, list_folder, protected=()):
         self.library_roots=tuple(path(root.rstrip('/')) for root in library_roots)
         self.seeds=tuple(dict.fromkeys(path(seed.rstrip('/')) for seed in seeds))
+        self.card_roots=tuple(pp.dirname(s) if video(s) else s for s in self.seeds)
         self.movie=movie;self.list_folder=list_folder
         self.protected=tuple(path(p.rstrip('/')) for p in protected if p)
         self.listings={};self.fingerprints={};self.entries={};self.roots=[]
@@ -82,7 +91,7 @@ class Inventory:
                     if p==root:continue
                     if e.get('isdir'):
                         if pp.basename(p).casefold() not in EXTRA_DIRS and not any(within(s,p) for s in self.seeds) and (blocked(p) or self._list(p)):allowed=False;break
-                    elif video(p) and p not in self.seeds and not sample(p):allowed=False;break
+                    elif video(p) and p not in self.seeds and not sample(p,self.card_roots):allowed=False;break
                     elif pp.splitext(p)[1].lower() not in AUX:allowed=False;break
                 if not allowed:break
                 root=parent
@@ -94,7 +103,7 @@ class Inventory:
             self._walk(root,0,root not in self.library_roots)
         for seed in self.seeds:
             if video(seed) and seed not in self.entries:raise ValueError('A kijelölt fájl már nem található a NAS-on.')
-        self.videos={p:season(p) for p,e in self.entries.items() if not e.get('isdir') and video(p) and not sample(p)
+        self.videos={p:season(p) for p,e in self.entries.items() if not e.get('isdir') and video(p) and not sample(p,self.card_roots)
                      and (movie or any(within(p,s) if not video(s) else p==s for s in self.seeds)) and not self._protected(p)}
         if movie:
             self.targets=set(self.seeds)
@@ -139,7 +148,7 @@ class Inventory:
         selected=set(self.targets) if self.movie else {p for p,s in self.videos.items() if s in chosen}
         if not selected:raise ValueError('Válassz legalább egy évadot.')
         files=set(selected);unknown=set()
-        all_videos={p for p,e in self.entries.items() if not e.get('isdir') and video(p) and not sample(p)}
+        all_videos={p for p,e in self.entries.items() if not e.get('isdir') and video(p) and not sample(p,self.card_roots)}
         owned=[]
         candidates=list(self.roots)+[p for p,e in self.entries.items() if e.get('isdir')]
         for directory in candidates:

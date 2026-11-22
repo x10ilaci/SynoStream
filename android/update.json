@@ -2,13 +2,13 @@
   "format": 1,
   "platform": "android",
   "application_id": "hu.synostream.android",
-  "version": "0.5.22",
-  "version_code": 27,
+  "version": "0.5.23",
+  "version_code": 28,
   "min_sdk": 26,
-  "filename": "SynoStream_Android_0.5.22.apk",
-  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.22/SynoStream_Android_0.5.22.apk",
-  "sha256": "5d639a5f3950e799ce1cd94abb1fbc8145700a3dc1a6924995f4d1c4c5af6405",
-  "size": 1027765,
+  "filename": "SynoStream_Android_0.5.23.apk",
+  "url": "https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.23/SynoStream_Android_0.5.23.apk",
+  "sha256": "b05e2e17a674a71aea2aadc118da95049f94deedab967ba87f376719b26c36d2",
+  "size": 1030873,
   "signing_certificate_sha256": "993702ff90412c5aefcb43797d67adccb7bcdf62969f215fb92e9a5c52bca857",
-  "notes": "# Változások – Android 0.5.22\n\n1. A kísérőfájlt a megfelelő mappában lévő, leghosszabb egyező videótörzsnévhez rendeli. A közös Subs/Extras mappák hozzárendelése is ellenőrzött.\n2. Az owned mappák ismeretlen fájljai külön listában jelennek meg és alapból megmaradnak. Törlésükhöz minden új ablakban külön, alapból üres jelölőnégyzetet kell bekapcsolni. A végrehajtás az elfogadott listát újraellenőrzi.\n3. Hiányzó fizikai útvonalnál nincs törlés. A kiválasztott gyökér és a gyermekek fizikai elhelyezkedését a konfigurált médiatárhoz ellenőrzi; a gyökérmappás és azonos mappán belüli linkek sem kerülhetik meg az ellenőrzést. A megosztáslista a saját dokumentált mezőit kéri. A törlési API verziója az API.Info tartományához igazodik, külön 120 másodperces olvasási időkorláttal; bizonytalan írás nem ismétlődik.\n4. Automatikus médiatár-frissítés: Ki / 5 / 15 / 60 perc, alapból 5 perc. Mobilhálózaton alapból tiltott. Az automatikus ág nem indít ScanService-t vagy állandó értesítést; háttérbe kerüléskor megszakad, a függő jelzés megmarad. A kézi/force beolvasás előtér-szolgáltatása változatlan.\n5. Az ajánló a cache-ből kapott elemek másolatát lokalizálja. A megjelenített visszajelzés megőrizhető anélkül, hogy az eredeti cache-címet és -leírást átírná.\n6. Az új ajánlói leírás legfeljebb 600 karakter, szóhatáron rövidítve. Az állapot olvasása és feldolgozása háttérszálon történik, Betöltés… felülettel; a korábbi mentett állapot olvasható marad.\n\nA HTTP-sémakezelés, a Vissza-kezelés, a megjelölt védett modulok, a frissítő, a manifest, a targetSdk, a függőségek és az aláírási beállítások változatlanok. A frissítő aláírása és a korábbi alkalmazásadatok megmaradnak.\n\n7. A korábbi megjelenítés által átírt ajánló-cache érintett válaszait újratölti, a visszajelzéseket megőrizve. Lejárt magyar fordítás nem írhatja felül az új találatot; a magyar leírás mérete is korlátozott.\n"
+  "notes": "# SynoStream Android 0.5.23\n\n- A párosításmentés külön zárral és esemény-gyorsítótárral dolgozik; hálózati várakozás közben nem fogja a kliens közös monitorát.\n- A párhuzamos stream- és feltöltési kérések csak egyszer újítják meg a lejárt munkamenetet.\n- Pontosabb sample-felismerés; a médiatár és a kártya saját neve nem kizáró ok.\n- Nyilvános HTTP-címekhez egyszer elfogadható figyelmeztetés; a HTTP továbbra is használható.\n- Külön hibajelzés a biztosan elutasított és a bizonytalan eredményű törléshez; megszakításkor nincs újabb törlési köteg.\n- Záró perjelre normalizált fizikai útvonalak, változatlan szigorú ellenőrzéssel.\n- A stream tokenje és útvonala együtt cserélődik; a beolvasás elutasított indítása nem hagy beragadt állapotot.\n"
 }
