@@ -63,3 +63,9 @@ Az `app/src/androidTest` alatti élő NAS-t igénylő osztályok csak elkülön�
 - Kiadási mellékletek, aláírás, SHA256 és frissítési csatorna ellenőrzése.
 
 A konkrét próbák eredményét és a kimaradt előfeltételeket a kiadás mellett kell rögzíteni.
+
+
+## 1.107 / Android 0.5.25 regressziók
+
+A Windows tesztek: `tests/test_regressions1107.py`. Az Android közös szűrési, API-jogosultsági, HTTP-jóváhagyási és nagy párosítási index tesztjei: `Regression0525Test.java`; a kiadási kapu: `android/tests/test_release_preflight.py`.
+A DSM kétlépcsős eszköz-tokenjét szimulált válaszokkal teszteljük; élő 2FA-s NAS-teszt nem történt. A teszt nem módosít valódi NAS-fájlokat.

@@ -15,7 +15,8 @@ final class MediaDeletion {
  static boolean within(String p,String root){return p.equals(root)||p.startsWith(root+"/");}
  static boolean video(String p){return VIDEO.contains(ext(p));}
  static boolean sample(String p){return sample(p,List.of());}
- static boolean sample(String p,Collection<String> cardRoots){String file=name(p);if(java.util.regex.Pattern.compile("(?i)(?:^|[ ._-])sample(?:[ ._-]|$)").matcher(file).find()&&!stem(p).matches("(?i)^sample[ ._-]+\\S.*"))return true;String root=cardRoots.stream().filter(r->within(p,r)).max(Comparator.comparingInt(String::length)).orElse(null);if(root==null)return false;String below=parent(p).substring(root.length());for(String part:below.split("/"))if(Set.of("sample","samples","extras","proof").contains(part.toLowerCase(Locale.ROOT)))return true;return false;}
+ static boolean sample(String p,Collection<String> cardRoots){String root=cardRoots.stream().filter(r->within(p,r)).max(Comparator.comparingInt(String::length)).orElse(null);return MediaLogic.samplePath(p,root,false,false);}
+
  static String real(String value){return value.replaceFirst("/+$","");}
  boolean isSample(String p){List<String> anchors=new ArrayList<>();for(String seed:seeds)anchors.add(video(seed)?parent(seed):seed);return sample(p,anchors);}
 

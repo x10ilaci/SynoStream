@@ -5,12 +5,14 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget,
                             QTreeWidgetItem, QHeaderView, QPushButton, QDialogButtonBox)
 from synostream_torrent_selection import default_file_selected
+from synostream_logic import torrent_root
 
 
 class FileSelectionDialog(QDialog):
     def __init__(self, page, previews, format_size):
         super().__init__(page)
         self.page, self.previews, self.format_size = page, previews, format_size
+        self.torrent_roots = {p["list_id"]: torrent_root(f["name"] for f in p["files"]) for p in self.previews}
         self.file_items = []
         self.setWindowTitle(page.tr('Letöltendő fájlok kiválasztása'))
         self.resize(820, 560)
@@ -54,6 +56,7 @@ class FileSelectionDialog(QDialog):
         self.tree.itemChanged.connect(lambda *_args: self.summary_timer.start(0))
         self.tree.blockSignals(True)
         for preview in previews:
+            list_id = preview['list_id']
             root = QTreeWidgetItem(self.tree, [preview['title'], ''])
             root.setFlags(root.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate)
             folders = {(): root}
@@ -71,7 +74,7 @@ class FileSelectionDialog(QDialog):
                 item = QTreeWidgetItem(folders[tuple(path[:-1])], [path[-1], format_size(file.get('size'))])
                 item.setToolTip(0, file['name'])
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.CheckState.Checked if default_file_selected(file['name']) else Qt.CheckState.Unchecked)
+                item.setCheckState(0, Qt.CheckState.Checked if default_file_selected(file['name'], self.torrent_roots.get(list_id,'')) else Qt.CheckState.Unchecked)
                 self.file_items.append((item, preview['list_id'], file))
             root.setExpanded(True)
         self.tree.blockSignals(False)
@@ -92,8 +95,8 @@ class FileSelectionDialog(QDialog):
     def set_selection(self, mode):
         self.tree.blockSignals(True)
         try:
-            for item, _list_id, file in self.file_items:
-                checked = mode == 'all' or mode == 'recommended' and default_file_selected(file['name'])
+            for item, list_id, file in self.file_items:
+                checked = mode == 'all' or mode == 'recommended' and default_file_selected(file['name'], self.torrent_roots.get(list_id,''))
                 item.setCheckState(0, Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
         finally:
             self.tree.blockSignals(False)

@@ -14,7 +14,15 @@ public final class MediaLogic {
     private static final Pattern NOISE=Pattern.compile("(?i)\\b(?:2160p|1080[pi]|720p|576[pi]|480p|4k|uhd|web[ -]?dl|web[ -]?rip|hdrip|brrip|bdrip|dvdrip|hdtv|blu[ -]?ray|remux|x ?26[45]|h ?26[45]|xvid|divx|hevc|avc|aac|ac3|dts(?:-hd)?|dd ?p? ?\\d ?\\d|atmos|hdr(?:10\\+?)?|10 ?bit|dovi|dolby[ ._-]?vision|S\\d{1,2}(?:E\\d{0,3})?|season\\s*\\d{1,3}|\\d{1,3}\\s*\\.?\\s*(?:évad|evad)|E0*\\d{3,5}(?:[ ._-]*[-–][ ._-]*E?0*\\d{3,5})?)\\b");
     public static final class Name {public final String title,year;public Name(String t,String y){title=t;year=y;}}
     public static boolean video(String name){return VIDEO.matcher(name).matches()&&!sample(name)&&!ignored(name);}
-    public static boolean sample(String name){return Pattern.compile("(?i)(?:^|[ ._-])sample(?:[ ._-]|$)").matcher(name).find();}
+    public static boolean sample(String value){String name=value.replace('\\','/');name=name.substring(name.lastIndexOf('/')+1);String stem=name.replaceFirst("\\.[^.]+$","");return Pattern.compile("(?i)(?:^|[ ._-])sample(?:[ ._-]|$)").matcher(name).find()&&!stem.matches("(?i)^sample[ ._-]+\\S.*");}
+    public static boolean samplePath(String value,String root,boolean directory,boolean torrent){String p=value.replace('\\','/').replaceFirst("/+$","");String[] parts=p.split("/");if(!directory&&sample(parts[parts.length-1]))return true;String relative;
+        if(root!=null){String r=root.replace('\\','/').replaceFirst("/+$","");if(!r.isEmpty()&&!p.equals(r)&&!p.startsWith(r+"/"))return false;relative=p.substring(r.length()).replaceFirst("^/+","");}
+        else if(torrent){relative=p.substring(p.indexOf('/')+1);if(!p.contains("/"))relative="";}
+        else return false;
+        String[] children=relative.split("/");int end=directory?children.length:children.length-1;for(int i=0;i<end;i++)if(Set.of("sample","samples","extras","proof").contains(children[i].toLowerCase(Locale.ROOT)))return true;return false;}
+    public static String torrentRoot(List<String> names){if(names.isEmpty())return "";String[] first=names.get(0).replace('\\','/').split("/");if(first.length<2)return "";for(String name:names){String[] parts=name.replace('\\','/').split("/");if(parts.length<2||!parts[0].equals(first[0]))return "";}return first[0];}
+    public static String cardRoot(String root,String path){if(!path.startsWith(root+"/"))return root;String below=path.substring(root.length()+1);int split=below.indexOf('/');return split<0?path:root+"/"+below.substring(0,split);}
+
     public static boolean ignored(String name){String n=name.toLowerCase(Locale.ROOT);return n.startsWith(".")||n.startsWith("@")||Set.of("#recycle","recycler","system volume information","$recycle.bin","lost+found").contains(n);}
     public static String normalize(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFKD).replaceAll("\\p{M}","").toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]+"," ").trim().replaceAll("\\s+"," ");}
     public static Name clean(String name,boolean file){

@@ -93,9 +93,10 @@ public final class MainActivity extends Activity {
         try{NasRoutes.plan(c,true);}catch(Exception invalid){toast(SynoApp.safeError(invalid));return;}
         if(HttpConsentUi.require(this,c,()->connectProfile(profile,c,save,completed)))return;
         s.busy=true;s.status=getString(R.string.msg_connecting_to_the_nas_45317b);s.changed();View focus=getCurrentFocus();if(focus!=null)((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(focus.getWindowToken(),0);
+        android.content.SharedPreferences consentStore=s.getSharedPreferences("http_consent",0);
         String startedNetwork=s.networkKey();boolean allowLocal=s.allowLocalNetwork();long editSession=s.connectionDraft.generation;
         s.profileIo.execute(()->{
-            NasClient candidate=new NasClient(c).fork("SynoStreamLogin_"+UUID.randomUUID().toString().replace("-",""));
+            NasClient candidate=new NasClient(c).fork("SynoStreamLogin_"+UUID.randomUUID().toString().replace("-","")).withHttpConsent(values->HttpConsent.pending(values,key->consentStore.getBoolean(key,false)).isEmpty());
             try{
                 candidate.connect(allowLocal);
                 String oldAddress=s.store.get("address","");if(profile.owner(c.user).equals(AccountIdentity.owner(oldAddress,c.user)))AccountIdentity.migrateKeys(s.store,oldAddress,c.user);

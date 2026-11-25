@@ -3,6 +3,9 @@ import android.content.Context;import org.json.JSONObject;import java.util.*;
 final class UiText {
  static final List<String> messageKeys,englishMessageKeys;
  static final Map<String,Integer> messages,englishMessages;static {Map<String,Integer> m=new LinkedHashMap<>();
+  m.put("A nyilvános HTTP-kapcsolatot előbb erősítsd meg a NAS-kapcsolat beállításaiban.",R.string.http_consent_pending);
+  m.put("A NAS nem támogatja ezt a törlési műveletet. A törlés nem indult el.",R.string.nas_delete_unsupported);
+  m.put("A NAS nem támogatja a párosításmentést. A helyi korrekció megmarad.",R.string.nas_pairing_unsupported);
   m.put("A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.",R.string.delete_physical_required);
   m.put("A NAS nem támogatja ezt a törlési műveletet.",R.string.delete_api_range);
   m.put("A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.",R.string.delete_physical_mismatch);

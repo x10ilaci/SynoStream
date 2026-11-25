@@ -1,5 +1,8 @@
 """One NAS identity over local API, DDNS HTTPS and QuickConnect fallback."""
 from urllib.parse import urlsplit, urlunsplit
+import json
+import hashlib
+import logging
 import re
 import threading
 import time
@@ -53,6 +56,20 @@ def nas_json(response):
     if not isinstance(payload, (dict, list)):
         raise RuntimeError('A NAS nem értelmezhető JSON-választ adott.')
     return payload
+
+
+def nas_device_key(credentials):
+    identity = [str(credentials.get(k) or '').strip() for k in
+                ('nas_local_url','nas_direct_url','quickconnect_id','nas_username')]
+    return hashlib.sha256(json.dumps(identity,ensure_ascii=False).encode('utf-8')).hexdigest()
+
+
+def trusted_device_id(credentials):
+    if credentials.get('use_device_token') is False: return ''
+    try:
+        value = json.loads(credentials.get('nas_device_tokens') or '{}').get(nas_device_key(credentials), '')
+        return value if isinstance(value,str) and 0 < len(value) <= 4096 and not any(ord(c)<32 for c in value) else ''
+    except (TypeError,ValueError,AttributeError): return ''
 
 
 class NASAuthenticationError(RuntimeError):
@@ -148,7 +165,10 @@ class RemoteNASClient:
         for item in nas_json(r) if isinstance(nas_json(r), list) else []:
             env = item.get("env") or {}
             if item.get("errno") == 0 and env.get("relay_region"):
-                bases.append(quickconnect_url(identifier, env['relay_region']))
+                try:
+                    bases.append(quickconnect_url(identifier, env['relay_region']))
+                except ValueError:
+                    logging.getLogger('SynoStream').warning('Érvénytelen QuickConnect-régió kihagyva: ValueError')
         last_error = None
         api_data = None
         self.session.headers.update({"User-Agent": "Mozilla/5.0 SynoStream/1.0", "Referer": quickconnect_url(identifier) + "/"})
@@ -174,8 +194,17 @@ class RemoteNASClient:
         self.auth_url=self._endpoint(auth.get("path") or "auth.cgi")
         self.auth_version=auth.get("maxVersion") or 6
         otp = self.credentials.pop("otp_code", "")
+        device = trusted_device_id(self.credentials)
+        trust = bool(otp and self.credentials.get('remember_device'))
+        parameters = {}
+        if (device or trust) and int(self.auth_version) >= 6:
+            self.auth_version = 6
+            parameters['device_name'] = 'SynoStream Windows'
+            if device: parameters['device_id'] = device
+            if trust: parameters['enable_device_token'] = 'yes'
+
         login=self._connect_request("post", self.auth_url, data={"api":"SYNO.API.Auth", "version":self.auth_version,
-            "method":"login", "account":username, "passwd":password, "session":self.session_name, "format":"sid", **({"otp_code":otp} if otp else {})}, timeout=(8,20))
+            "method":"login", "account":username, "passwd":password, "session":self.session_name, "format":"sid", **({"otp_code":otp} if otp else {}), **parameters}, timeout=(8,20), allow_redirects=False)
         try:
             login.raise_for_status(); payload=nas_json(login)
         finally:
@@ -184,9 +213,11 @@ class RemoteNASClient:
             raise ValueError("Érvénytelen NAS-válasz.")
         if not payload.get("success"):
             if (payload.get("error") or {}).get("code") == 403:
-                raise NASOtpRequired("Kétlépcsős kód szükséges: A NAS egyszer használatos kétlépcsős kódot kér.")
+                raise NASOtpRequired("Kétlépcsős kód szükséges: Nyisd meg a Beállítások NAS-kapcsolatát, add meg az egyszer használatos kódot, és a háttérműveletekhez engedélyezd a megbízható eszköz megjegyzését.")
             raise NASAuthenticationError(f"NAS-bejelentkezés sikertelen (DSM-hibakód: {(payload.get('error') or {}).get('code','ismeretlen')}).")
         self.sid=(payload.get("data") or {}).get("sid", "")
+        token = (payload.get("data") or {}).get("did", "")
+        self.device_id = token if trust and isinstance(token,str) and 0 < len(token) <= 4096 and not any(ord(c)<32 for c in token) else ""
         li=info.get("SYNO.FileStation.List") or {}; dl=info.get("SYNO.FileStation.Download") or {}
         self.list_version=li.get("maxVersion") or 2
         self.list_url=self._endpoint(li.get("path") or "entry.cgi")
@@ -241,7 +272,7 @@ class RemoteNASClient:
                 if self.transport in ('local', 'direct'):
                     kwargs['timeout'] = (4, 8)
                 response = self._request(method, url, **kwargs)
-                if response.status_code in (429, 502, 503, 504) and attempt < 2 and self.transport not in ('local', 'direct'):
+                if response.status_code in (429, 502, 503, 504) and attempt < attempts - 1 and self.transport not in ('local', 'direct'):
                     response.close()
                     self._pause(0.5 * 2 ** attempt)
                     continue

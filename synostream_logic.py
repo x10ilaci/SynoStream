@@ -149,6 +149,7 @@ def parse_episode_position(relative_path):
             has_explicit_season = True
 
     filename = os.path.splitext(parts[-1])[0] if parts else normalized
+    filename = re.sub(r"(?i)(?<![a-z0-9])\d{3,5}\s*x\s*\d{2,5}(?:[pi])?(?![a-z0-9])", " ", filename).strip(" ._-[](){}")
     inline_season = _season_number(filename)
     if inline_season is not None:
         season = inline_season
@@ -202,7 +203,7 @@ def parse_episode_position(relative_path):
         return season, int(absolute_episode.group(1)), True
 
     # Do not mistake a resolution such as 1280x720 for an episode marker.
-    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,3})\s*x\s*0*(\d{1,3})(?!\d)", normalized)
+    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,2})\s*x\s*0*(\d{1,3})(?![a-z0-9])", normalized)
     if episode_match:
         return int(episode_match.group(1)), int(episode_match.group(2)), True
 
@@ -313,8 +314,36 @@ def movie_search_context(filename, folder_name="", single_movie_folder=False):
             "year": folder_year if use_folder else year, "from_folder": use_folder}
 
 
+SAMPLE_FOLDERS = {'sample', 'samples', 'extras', 'proof'}
+
+
 def is_sample_video(name):
-    return bool(re.search(r"(?i)(?:^|[ ._-])sample(?:[ ._-]|$)", str(name or "")))
+    """Filename markers, excluding titles beginning with the word Sample."""
+    name = str(name or '').replace('\\', '/').rsplit('/', 1)[-1]
+    stem = os.path.splitext(name)[0]
+    return bool(re.search(r'(?i)(?:^|[ ._-])sample(?:[ ._-]|$)', name)
+                and not re.match(r'(?i)^sample[ ._-]+\S', stem))
+
+
+def torrent_root(names):
+    parts=[str(name).replace('\\','/').split('/') for name in names]
+    return parts[0][0] if parts and all(len(p)>1 and p[0]==parts[0][0] for p in parts) else ''
+
+
+def is_sample_path(value, card_root=None, *, torrent=False, directory=False):
+    value = str(value or '').replace('\\', '/').rstrip('/')
+    parts = value.split('/')
+    if not directory and is_sample_video(parts[-1]): return True
+    folders = parts if directory else parts[:-1]
+    if card_root is not None:
+        root = str(card_root).replace('\\', '/').rstrip('/')
+        if root and value != root and not value.startswith(root + '/'): return False
+        folders = value[len(root):].strip('/').split('/') if directory else value[len(root):].strip('/').split('/')[:-1]
+    elif torrent:
+        folders = folders[1:]
+    else:
+        folders = []
+    return any(part.casefold() in SAMPLE_FOLDERS for part in folders)
 
 
 def release_filename_candidate(filename, folder_name):

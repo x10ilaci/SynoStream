@@ -24,7 +24,7 @@ def test_quickconnect_identifier_rejected_before_io(identifier):
 @pytest.mark.parametrize('region',['evil.example/x?','us@evil.example','us:443','/us','US'])
 def test_quickconnect_region_rejected_before_endpoint_io(region):
  c=bare_client();c._connect_request=Mock(return_value=response([{'errno':0,'env':{'relay_region':region}}]))
- with pytest.raises(ValueError):c._discover_quickconnect('safe-id')
+ with pytest.raises(RuntimeError):c._discover_quickconnect('safe-id')
  assert c._connect_request.call_count==1
  assert quickconnect_url('safe-id','us1')=='https://safe-id.us1.quickconnect.to'
 

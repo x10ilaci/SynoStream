@@ -1,7 +1,7 @@
 # SynoStream is a Windows media-library and playback application.
 # Copyright (C) 2026 Lőrincz László
 # SPDX-License-Identifier: GPL-3.0-only
-# Modified version: SynoStream 1.106, 2026-11-11.
+# Modified version: SynoStream 1.107, 2026-11-11.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import quote, urlsplit
 
 import requests
-from synostream_nas import RemoteNASClient as _RemoteNASClient, validate_quickconnect_id, quickconnect_url
+from synostream_nas import RemoteNASClient as _RemoteNASClient, validate_quickconnect_id, quickconnect_url, nas_device_key, trusted_device_id
 from synostream_sources import SourceRouter, RoutedNASClient, parse_pairs, expand_mapped_path, automatic_pairs
 from synostream_source_migration import migrate_database as migrate_source_database, canonicalize_config, resolve_pending_cases
 from synostream_source_ui import SourcePairsDialog
@@ -465,6 +465,19 @@ _UI_TEXTS_EN.update({
     "A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.": "The NAS did not provide the physical path; deletion cannot be performed safely.",
 })
 
+
+_UI_TEXTS_EN.update({
+    'Kétlépcsős azonosítás':'Two-step verification',
+    'A NAS egyszer használatos kódja:':'One-time NAS verification code:',
+    'Megbízható eszköz megjegyzése a kétlépcsős belépéshez':'Remember this device for two-step verification',
+    'Érvénytelen QuickConnect-azonosító a beállításokban; add meg újra.':'Invalid QuickConnect ID in settings; enter it again.',
+    'Érvénytelen QuickConnect-régió; a teszt megszakadt.':'Invalid QuickConnect region; the test was stopped.',
+    'A NAS nem értelmezhető JSON-választ adott.':'The NAS returned an invalid JSON response.',
+    'A NAS nem értelmezhető API-választ adott.':'The NAS returned an invalid API response.',
+    'Mentési figyelmeztetés':'Settings could not be saved',
+    'MPV telepítése nem sikerült':'MPV installation failed',
+    'Kétlépcsős kód szükséges: Nyisd meg a Beállítások NAS-kapcsolatát, add meg az egyszer használatos kódot, és a háttérműveletekhez engedélyezd a megbízható eszköz megjegyzését.':'Two-step verification required: open NAS connection settings, enter a one-time code and enable trusted device storage for background operations.',
+})
 
 def translate_text(text):
     if not isinstance(text, str) or UI_LANGUAGE != "en":
@@ -1213,9 +1226,9 @@ except DataDirectoryInUse:
 recover_settings_transaction(BASE_DIR)
 if __name__ == '__main__' and '--smoke-test' not in sys.argv and '--updated-from' not in sys.argv:
     from synostream_updates import launch_pending_update
-    if launch_pending_update('1.106', sys.executable, BASE_DIR):
+    if launch_pending_update('1.107', sys.executable, BASE_DIR):
         raise SystemExit(0)
-backup_before_upgrade(BASE_DIR, "1.106")
+backup_before_upgrade(BASE_DIR, "1.107")
 if os.path.isfile(os.path.join(BASE_DIR, "media_library.db")):
     with contextlib.closing(sqlite3.connect(os.path.join(BASE_DIR, "media_library.db"))) as _preflight:
         if _preflight.execute("PRAGMA user_version").fetchone()[0] > 1:
@@ -1253,7 +1266,7 @@ CARD_SIZE_PRESETS = {
 }
 
 # Minden további alkalmazásmódosításnál a verzió tizedes utáni száma növekszik.
-APP_VERSION = "1.106"
+APP_VERSION = "1.107"
 MAX_POSTER_CACHE_BYTES = 512 * 1024 * 1024
 BACKUP_FORMAT_VERSION = 1
 POSTER_CACHE_LOCK = threading.RLock()
@@ -1442,6 +1455,7 @@ DEFAULT_CONFIG = {
     "nas_local_url": "",
     "nas_username": "",
     "nas_password": "",
+    "nas_device_tokens": "",
     "remote_movies_path": "",
     "remote_shows_path": "",
     "custom_libraries": [],
@@ -1453,7 +1467,7 @@ DEFAULT_CONFIG = {
     "library_scan_state": {},
 }
 
-SECRET_CONFIG_KEYS = {"tmdb_api_key", "nas_password"}
+SECRET_CONFIG_KEYS = {"tmdb_api_key", "nas_password", "nas_device_tokens"}
 SECRET_STORE_UNREADABLE = False
 
 
@@ -2476,8 +2490,8 @@ def write_tmdb_metadata_cache(cache_key, payload):
                 VALUES (?, ?, ?, ?)
             ''', (cache_key, current_tmdb_language(), json.dumps(payload, ensure_ascii=False), time.time()))
             conn.commit()
-    except (OSError, sqlite3.Error, TypeError, ValueError):
-        LOGGER.warning('Nem sikerült egy művelet: write_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+    except (OSError, sqlite3.Error, TypeError, ValueError) as diagnostic_error:
+        LOGGER.warning('Nem sikerült egy művelet: write_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
 
 
 def merge_tmdb_metadata_cache(cache_key, payload):
@@ -2495,16 +2509,16 @@ def merge_tmdb_metadata_cache(cache_key, payload):
                     decoded = json.loads(row[0])
                     if isinstance(decoded, dict):
                         existing = decoded
-                except (TypeError, ValueError):
-                    LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+                except (TypeError, ValueError) as diagnostic_error:
+                    LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
             existing.update(payload)
             conn.execute('''
                 INSERT OR REPLACE INTO tmdb_metadata_cache (cache_key, language, payload, fetched_at)
                 VALUES (?, ?, ?, ?)
             ''', (cache_key, current_tmdb_language(), json.dumps(existing, ensure_ascii=False), time.time()))
             conn.commit()
-    except (OSError, sqlite3.Error, TypeError, ValueError):
-        LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+    except (OSError, sqlite3.Error, TypeError, ValueError) as diagnostic_error:
+        LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
 
 
 def fetch_tmdb_certification_order(country, certification, is_movie):
@@ -3611,6 +3625,7 @@ class QuickConnectProbeWorker(QThread):
 
         candidates = []
         relay_candidates = []
+        invalid_regions = 0
         if not isinstance(resolved, list):
             lines.append(f"Váratlan válaszformátum: {str(resolved)[:500]}")
         else:
@@ -3628,8 +3643,8 @@ class QuickConnectProbeWorker(QThread):
                     try:
                         relay_candidates.append(quickconnect_url(self.quickconnect_id, relay_region))
                     except ValueError:
-                        self._finish("Érvénytelen QuickConnect-régió; a teszt megszakadt.")
-                        return
+                        invalid_regions += 1
+                        LOGGER.warning("Érvénytelen QuickConnect-régió kihagyva: ValueError")
                 lines.append(
                     "  Szolgáltatás {sid}: errno={errno}, pingpong={ping}, ext_port={port}, hostok={hosts}".format(
                         sid=item.get("id", "?"), errno=item.get("errno", "?"),
@@ -3661,6 +3676,9 @@ class QuickConnectProbeWorker(QThread):
                                 candidates.append(f"https://{host}:{port}")
                         candidates.append(f"https://{host}")
 
+        if invalid_regions and not relay_candidates and not candidates:
+            self._finish("Érvénytelen QuickConnect-régió; a teszt megszakadt.")
+            return
         candidates.extend([
             quickconnect_url(self.quickconnect_id, "direct"),
         ])
@@ -3871,6 +3889,9 @@ class RemoteQuickConnectDialog(QDialog):
         form.addRow("QuickConnect ID:", self.id_edit)
         form.addRow("NAS-felhasználó:", self.user_edit)
         form.addRow("NAS-jelszó:", password_row)
+        self.remember_device = QCheckBox(translate_text("Megbízható eszköz megjegyzése a kétlépcsős belépéshez"))
+        self.remember_device.setChecked(bool(trusted_device_id(config)))
+        form.addRow(self.remember_device)
         root.addLayout(form)
         row = QHBoxLayout()
         self.connect_btn = QPushButton("Kapcsolódás")
@@ -3986,7 +4007,9 @@ class RemoteQuickConnectDialog(QDialog):
             return
         otp = getattr(self, "_otp_once", "")
         self._otp_once = ""
-        client_credentials = dict(credentials, **({"otp_code":otp} if otp else {}))
+        client_credentials = dict(credentials, nas_device_tokens=config.get("nas_device_tokens", ""),
+                                  use_device_token=self.remember_device.isChecked(), remember_device=self.remember_device.isChecked(),
+                                  **({"otp_code":otp} if otp else {}))
         def connected(client):
             self.session.close()
             self._nas_client = client
@@ -3994,6 +4017,13 @@ class RemoteQuickConnectDialog(QDialog):
                          "list_version", "download_url", "download_version"):
                 setattr(self, name, getattr(client, name))
             config.update(credentials)
+            try: devices = json.loads(config.get('nas_device_tokens') or '{}')
+            except (TypeError,ValueError): devices = {}
+            if not isinstance(devices,dict):devices={}
+            key=nas_device_key(credentials)
+            if not self.remember_device.isChecked():devices.pop(key,None)
+            elif getattr(client,'device_id',''):devices[key]=client.device_id
+            config['nas_device_tokens']=json.dumps(devices)
             ok, error = save_config()
             if not ok:
                 QMessageBox.warning(self, "Mentési figyelmeztetés", redact_credentials(error))
@@ -6391,7 +6421,7 @@ def _remote_stream_url(remote_path):
             _remote_playback_server.daemon_threads=True
             _remote_playback_thread=threading.Thread(target=_remote_playback_server.serve_forever,daemon=True)
             _remote_playback_thread.start()
-        credentials = {key: config.get(key, "") for key in ("quickconnect_id", "nas_username", "nas_password", "nas_direct_url", "nas_local_url")}
+        credentials = {key: config.get(key, "") for key in ("quickconnect_id", "nas_username", "nas_password", "nas_direct_url", "nas_local_url", "nas_device_tokens")}
         profile_id = next((key for key, value in _remote_playback_profiles.items()
                            if value["credentials"] == credentials), None)
         if profile_id is None:
@@ -6817,6 +6847,7 @@ class MpvInstallWorker(QThread):
     progress_label = pyqtSignal(str)
     completed = pyqtSignal(str)
     failed = pyqtSignal(str)
+    cancelled = pyqtSignal()
 
     def setValue(self, value): self.progress_value.emit(value)
     def setLabelText(self, text): self.progress_label.emit(text)
@@ -6827,12 +6858,18 @@ class MpvInstallWorker(QThread):
             result = bootstrap(MPV_INSTALL_DIR, MPV_RELEASE_API, MAX_MPV_ARCHIVE_BYTES,
                                self.isInterruptionRequested, self)
             self.completed.emit(result)
+        except InterruptedError:
+            self.cancelled.emit()
         except Exception as error:
             self.failed.emit(str(error))
 
 
 def ensure_mpv(parent=None):
     """Keep the startup return contract while all bootstrap I/O runs off the GUI thread."""
+    if not getattr(ensure_mpv, '_cleanup_started', False):
+        from synostream_mpv_install import cleanup_stale
+        ensure_mpv._cleanup_started = True
+        threading.Thread(target=cleanup_stale, args=(MPV_INSTALL_DIR,), daemon=True).start()
     configured = (config.get('mpv_path') or 'mpv.exe').strip().strip('"')
     existing = resolve_mpv_path(configured)
     if existing: return existing
@@ -6844,17 +6881,18 @@ def ensure_mpv(parent=None):
     if sys.platform != 'win32': return None
     from PyQt6.QtCore import QEventLoop
     from PyQt6.QtWidgets import QProgressDialog
-    progress = QProgressDialog('Az MPV lejátszó hiányzik. Letöltés és telepítés…', 'Mégse', 0, 100, parent)
-    progress.setWindowTitle('MPV telepítése')
+    progress = QProgressDialog(translate_text('Az MPV lejátszó hiányzik. Letöltés és telepítés…'), translate_text('Mégse'), 0, 100, parent)
+    progress.setWindowTitle(translate_text('MPV telepítése'))
     progress.setWindowModality(Qt.WindowModality.ApplicationModal)
     progress.setMinimumDuration(0)
     progress.setAutoClose(False)
     worker = MpvInstallWorker()
-    result = {'path':None, 'error':None}
+    result = {'path':None, 'error':None, 'cancelled':False}
     worker.progress_value.connect(progress.setValue)
-    worker.progress_label.connect(progress.setLabelText)
+    worker.progress_label.connect(lambda text: progress.setLabelText(translate_text(text)))
     worker.completed.connect(lambda value:result.update(path=value))
     worker.failed.connect(lambda value:result.update(error=value))
+    worker.cancelled.connect(lambda:result.update(cancelled=True))
     progress.canceled.connect(worker.requestInterruption)
     loop = QEventLoop()
     worker.finished.connect(loop.quit)
@@ -6863,6 +6901,7 @@ def ensure_mpv(parent=None):
     loop.exec()
     worker.wait()
     progress.close()
+    if result['cancelled']: return None
     if result['error']:
         QMessageBox.warning(parent, 'MPV telepítése nem sikerült', 'Az alkalmazás MPV nélkül indul tovább.\n\n'+result['error'])
         return None
@@ -8504,7 +8543,7 @@ class DSVideoWindow(QMainWindow):
             self._pairing_sync_again = True
             return
         roots = portable_roots()
-        credentials = {key: config.get(key, "") for key in ("quickconnect_id", "nas_username", "nas_password", "nas_direct_url", "nas_local_url")}
+        credentials = {key: config.get(key, "") for key in ("quickconnect_id", "nas_username", "nas_password", "nas_direct_url", "nas_local_url", "nas_device_tokens")}
         self._pairing_sync_running = True
         self.portable_sync_button.setEnabled(False)
         self.portable_notice.setText("Szinkronizálás folyamatban…")
@@ -10352,7 +10391,7 @@ class DSVideoWindow(QMainWindow):
             for path in other.get('episode_roots') or [other.get('file_path','')]:
                 canonical=source_router().canonical(path)
                 if is_remote_path(canonical) and canonical not in seeds:protected.append(canonical)
-        credentials={key:config.get(key,'') for key in ('quickconnect_id','nas_username','nas_password','nas_direct_url','nas_local_url')}
+        credentials={key:config.get(key,'') for key in ('quickconnect_id','nas_username','nas_password','nas_direct_url','nas_local_url','nas_device_tokens')}
         def factory(stop):return _RemoteNASClient(credentials,stop,extra_apis=('SYNO.FileStation.Delete',))
         def completed(result):
             gone=[REMOTE_PREFIX+p for p in result['files']+result['folders']]

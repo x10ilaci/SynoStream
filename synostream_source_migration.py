@@ -66,13 +66,13 @@ def migrate_database(conn, old_router, new_router):
     for payload, in conn.execute('SELECT playlist_paths FROM playback_state'):
         try:
             for value in json.loads(payload): remember(value)
-        except (ValueError, TypeError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except (ValueError, TypeError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
     for saved_root, saved_payload in conn.execute('SELECT root,payload FROM portable_events'):
         try:
             event = json.loads(saved_payload)
             if saved_root.startswith(('\\\\','//')):
                 remember(ntpath.join(saved_root,*event['relative_path'].split('/')))
-        except (ValueError,TypeError,KeyError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except (ValueError,TypeError,KeyError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
     # UNC database keys are case-folded by Windows. Existing NAS keys preserve
     # the real spelling, and let us merge a legacy key without changing identity.
     remote_spelling = {}
@@ -137,7 +137,7 @@ def migrate_database(conn, old_router, new_router):
                             and (row['file_path'] == pair.remote or row['file_path'].startswith(pair.remote + '/'))):
                         row['library_id'] = pair.library_id
                 try: row['payload'] = json.dumps(payload(json.loads(row['payload'])), ensure_ascii=False)
-                except (ValueError, TypeError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+                except (ValueError, TypeError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: migrate_database. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
             if table == 'playback_state':
                 try: row['playlist_paths'] = json.dumps(payload(json.loads(row['playlist_paths']), True), ensure_ascii=False)
                 except (ValueError, TypeError): row['playlist_paths'] = '[]'

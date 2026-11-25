@@ -122,8 +122,8 @@ class UpdateController(QObject):
             existing = updates.pending_update(self.data_dir, self.version)
             if existing and existing['manifest']['version'] == self.manifest['version']:
                 self.staged = existing; self.refresh_settings_texts(); return
-        except (OSError, ValueError, updates.UpdateError):
-            logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: _download_automatic. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except (OSError, ValueError, updates.UpdateError) as diagnostic_error:
+            logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: _download_automatic. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
         self._background_download = True
         worker = UpdateWorker(self.version, self.manifest); self.worker = worker
         if self.check_button: self.check_button.setEnabled(False)
@@ -238,7 +238,7 @@ class UpdateController(QObject):
         try:
             updates.prepare_install(self.staged, sys.executable, self.data_dir)
             try: updates.clear_pending_update(self.data_dir, self.staged)
-            except (OSError, ValueError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: install. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+            except (OSError, ValueError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: install. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
         except Exception as error:
             self._update_requested = False
             if isinstance(error, updates.UpdateError): self.staged = None

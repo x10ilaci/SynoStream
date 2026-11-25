@@ -1,6 +1,8 @@
 param([switch]$Offline)
 $ErrorActionPreference = 'Stop'
 $project = $PSScriptRoot
+$buildCommit = & py -3.13 "$project/release_rules.py" --repo $project
+if ($LASTEXITCODE -ne 0) { throw 'Csak tiszta Git-munkafából készíthető kiadás.' }
 $arguments = @('-p', $project, 'testReleaseUnitTest', 'lintRelease', 'assembleRelease', '--no-watch-fs', '--max-workers=2', '--console=plain')
 if ($Offline) { $arguments += '--offline' }
 & "$project/gradlew.bat" @arguments
@@ -12,3 +14,6 @@ $apk = "$project/app/build/outputs/apk/release/app-release.apk"
 py -3.13 "$project/verify_release.py" $apk --version $releaseVersion --version-code $releaseCode
 if ($LASTEXITCODE -ne 0) { throw 'Az APK nem felel meg a terjesztési ellenőrzésnek; nem publikálható.' }
 Write-Output "Ellenőrzött release APK: $apk"
+
+py -3.13 "$project/record_build.py" --repo $project --commit $buildCommit --apk $apk --version $releaseVersion --code $releaseCode --out "$project/app/build/outputs/apk/release/build-provenance.json"
+if ($LASTEXITCODE -ne 0) { throw 'A fordítás eredete nem igazolható.' }

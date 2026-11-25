@@ -16,6 +16,8 @@ def verify_apk(apk, version, version_code, sdk=None):
     package = re.search(r"package: name='([^']+)' versionCode='([0-9]+)' versionName='([^']+)'",badging)
     if not package or package.groups() != (PACKAGE,str(version_code),version):
         raise RuntimeError('Az APK azonosítója vagy verziója nem a várt kiadás.')
+    sdk_match = re.search(r"sdkVersion:'([0-9]+)'",badging)
+    if not sdk_match or int(sdk_match.group(1)) < 26: raise RuntimeError('Érvénytelen minimum Android SDK.')
     if 'application-debuggable' in badging:
         raise RuntimeError('Hibakereshető APK nem terjeszthető.')
     xml = run([str(tools/'aapt.exe'),'dump','xmltree',str(apk),'AndroidManifest.xml'])
@@ -32,7 +34,7 @@ def verify_apk(apk, version, version_code, sdk=None):
     with zipfile.ZipFile(apk) as archive:
         if archive.testzip() is not None: raise RuntimeError('Sérült APK.')
     return {'application_id':PACKAGE,'version':version,'version_code':version_code,
-            'debuggable':False,'test_only':False,'signing_certificate_sha256':CERTIFICATE,
+            'debuggable':False,'test_only':False,'min_sdk':int(sdk_match.group(1)),'signing_certificate_sha256':CERTIFICATE,
             'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'size':apk.stat().st_size}
 
 if __name__ == '__main__':

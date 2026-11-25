@@ -1,5 +1,7 @@
 """MPV bootstrap I/O and transactional replacement; no GUI calls."""
 from urllib.parse import urlsplit
+import time
+import logging
 import stat
 import os,re,hashlib,zipfile,tempfile,shutil,uuid
 from pathlib import Path
@@ -11,6 +13,23 @@ def translate_text(text): return text
 
 def check_cancel(stop):
     if stop(): raise InterruptedError('Az MPV telepítését megszakítottad.')
+
+def cleanup_stale(install_dir, now=None):
+    destination=Path(install_dir).absolute();parent=destination.parent.resolve()
+    now=time.time() if now is None else now
+    if not parent.is_dir(): return
+    pattern=re.compile(re.escape(destination.name)+r'\.(?:old|new)-[0-9a-f]{32}$')
+    for candidate in parent.iterdir():
+        try:
+            if (not pattern.fullmatch(candidate.name) or candidate.is_symlink() or candidate.is_junction()
+                    or not candidate.is_dir() or candidate.resolve().parent!=parent
+                    or now-candidate.stat().st_mtime<86400):continue
+            # Do not traverse nested links/junctions during cleanup.
+            if any(p.is_symlink() or p.is_junction() for p in candidate.rglob('*')):continue
+            shutil.rmtree(candidate)
+        except OSError:
+            logging.getLogger('SynoStream').debug('Zárolt régi MPV-könyvtár megmaradt: OSError')
+
 
 def replace_install(source, destination, stop=lambda:False):
     destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
@@ -38,6 +57,7 @@ def replace_install(source, destination, stop=lambda:False):
 
 
 def bootstrap(install_dir, release_api, max_bytes, stop, progress):
+    cleanup_stale(install_dir)
     temp_dir=tempfile.mkdtemp(prefix='synostream_mpv_')
     try:
         headers = {"User-Agent": "SynoStream-MPV-bootstrap/1.0", "Accept": "application/vnd.github+json"}

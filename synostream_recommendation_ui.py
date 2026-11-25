@@ -122,8 +122,8 @@ class RecommendationsDialog(QDialog):
             self._preview_keys = tuple(identity(item) for item in self.batch)
             self.store.mark_seen(self.library_id, self.batch)
             self.render()
-        except Exception:
-            logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: preview_loaded. A korábbi adatokat vagy állapotot ellenőrizni kell.')  # The complete result/error still arrives through the worker.
+        except Exception as diagnostic_error:
+            logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: preview_loaded. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)  # The complete result/error still arrives through the worker.
 
     def loaded(self, result, previous):
         if self._closing: return
@@ -199,7 +199,7 @@ class RecommendationsDialog(QDialog):
                 self.next_button.setEnabled(bool(self.context()['seeds']))
             keys = tuple(identity(item) for item in self.visible_items())
             if keys != getattr(self, '_visible_keys', ()): self.render()
-        except Exception: logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: filter_owned. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except Exception as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: filter_owned. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
 
     def render(self):
         if self._closing: return

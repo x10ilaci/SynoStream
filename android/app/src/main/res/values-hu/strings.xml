@@ -469,4 +469,10 @@
 <string name="rec_restoring">Betöltés…</string>
 <string name="delete_api_range">A NAS nem támogatja ezt a törlési műveletet.</string>
 <string name="delete_physical_mismatch">A mappa másik helyre mutató hivatkozást tartalmaz; a törlés nem indult el.</string>
+    <string name="http_consent_title">Nem titkosított NAS-kapcsolat</string>
+    <string name="http_consent_message">A jelszó és a munkamenet titkosítatlanul megy.</string>
+    <string name="http_consent_accept">Elfogadom</string>
+    <string name="http_consent_pending">A nyilvános HTTP-kapcsolatot előbb erősítsd meg a NAS-kapcsolat beállításaiban.</string>
+    <string name="nas_delete_unsupported">A NAS nem támogatja ezt a törlési műveletet. A törlés nem indult el.</string>
+    <string name="nas_pairing_unsupported">A NAS nem támogatja a párosításmentést. A helyi korrekció megmarad.</string>
 </resources>

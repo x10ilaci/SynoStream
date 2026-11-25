@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import json
 import posixpath as pp
 import re
-from synostream_logic import parse_episode_position, is_sample_video
+from synostream_logic import parse_episode_position, is_sample_path
 
 VIDEO = {'.mkv','.mp4','.avi','.mov','.wmv','.m4v','.ts','.m2ts','.mpg','.mpeg','.webm'}
 AUX = {'.nfo','.srt','.ass','.ssa','.sub','.idx','.vtt','.sup','.jpg','.jpeg','.png','.txt','.sfv','.srr','.md5','.url','.torrent','.log'}
@@ -27,14 +27,9 @@ def within(value, root):
 def video(value): return pp.splitext(value)[1].lower() in VIDEO
 
 def sample(value, card_roots=()):
-    name = pp.basename(value)
-    # A leading word followed by a title ("Sample Size") is not a release marker.
-    if is_sample_video(name) and not re.match(r'(?i)^sample[ ._-]+\S', pp.splitext(name)[0]): return True
     anchors = [root for root in card_roots if within(value, root)]
-    if not anchors: return False
-    root = max(anchors, key=len)
-    return any(part.casefold() in {'sample','samples','extras','proof'}
-               for part in pp.dirname(value)[len(root):].strip('/').split('/'))
+    return is_sample_path(value, max(anchors, key=len) if anchors else None)
+
 
 def blocked(value): return any(part.casefold() in PROTECTED for part in value.split('/'))
 

@@ -35,7 +35,7 @@ public final class NasClient implements Library.Source {
     private final EndpointProbe endpointProbe;
     private final Credentials credentials;private final QuickResolver quickResolver;private boolean otpAttempted;private String authSession="SynoStreamAndroid";
     Credentials settingsCredentials(){NasClient next=replacement;return next==null?credentials:next.settingsCredentials();}
-    public NasClient fork(String session){NasClient copy=new NasClient(settingsCredentials(),quickResolver,endpointProbe);copy.authSession=session;return copy;}
+    public NasClient fork(String session){NasClient copy=new NasClient(settingsCredentials(),quickResolver,endpointProbe);copy.authSession=session;shareState(copy);return copy;}
     private final CookieManager cookies=new CookieManager(null,CookiePolicy.ACCEPT_ALL);
     private JSONObject apis=new JSONObject();
     private String base="",sid="",authPath="auth.cgi";
@@ -43,20 +43,24 @@ public final class NasClient implements Library.Source {
     // A stable facade is shared by scanner, playback and Download Station. Old in-flight
     // requests finish on their original session; only new calls use the replacement.
     private final Object connectionLock=new Object();
-    private final Object pairingWriteLock=new Object();
-    private final PairingReadCache pairingReads=new PairingReadCache();
+    private Object pairingWriteLock=new Object();
+    private PairingReadCache pairingReads=new PairingReadCache();
+    private PairingGenerationIndex pairingIndex=new PairingGenerationIndex();
+    private java.util.function.Predicate<Credentials> httpConsent=c->true;
+    NasClient withHttpConsent(java.util.function.Predicate<Credentials> policy){httpConsent=policy;return this;}
+    private void shareState(NasClient next){next.pairingWriteLock=pairingWriteLock;next.pairingReads=pairingReads;next.pairingIndex=pairingIndex;next.httpConsent=httpConsent;}
     private volatile NasClient replacement;
     private volatile boolean suspended;
     private int connectionGeneration,retirementRevision;
     private final Set<NasClient> superseded=Collections.newSetFromMap(new IdentityHashMap<>());
     int suspendConnection(){synchronized(connectionLock){suspended=true;return ++connectionGeneration;}}
-    boolean installConnection(int generation,NasClient next){synchronized(connectionLock){if(generation!=connectionGeneration)return false;if(replacement!=null&&replacement!=next)superseded.add(replacement);replacement=next;retirementRevision++;route=next.route;suspended=false;return true;}}
+    boolean installConnection(int generation,NasClient next){synchronized(connectionLock){if(generation!=connectionGeneration)return false;if(replacement!=null&&replacement!=next)superseded.add(replacement);shareState(next);replacement=next;retirementRevision++;route=next.route;suspended=false;return true;}}
     private NasClient current()throws IOException{if(suspended)throw new IOException("A hálózati kapcsolat változik. Várd meg az újracsatlakozást.");return replacement;}
     NasClient reconnectCandidate(boolean allowLocal)throws Exception{
         // An OTP is one-use data: never replay the code entered at the original login.
         NasClient next=new NasClient(settingsCredentials().withoutOtp(),quickResolver,endpointProbe);
         next.authSession="SynoStreamAndroid_"+UUID.randomUUID().toString().replace("-","");
-        next.connect(allowLocal);return next;
+        shareState(next);next.connect(allowLocal);return next;
     }
     public NasClient(Credentials c){this(c,null);}
     NasClient(Credentials c,QuickResolver resolver){this(c,resolver,null);}
@@ -71,6 +75,7 @@ public final class NasClient implements Library.Source {
     }
     public synchronized void connect() throws Exception {connect(true);}
     synchronized void connect(boolean allowLocal) throws Exception {
+        if(!httpConsent.test(credentials))throw new SecurityException("A nyilvános HTTP-kapcsolatot előbb erősítsd meg a NAS-kapcsolat beállításaiban.");
         if(credentials.user.isBlank()||credentials.password.isEmpty())throw new IOException("Add meg a NAS címét, a felhasználónevet és a jelszót.");
         Exception last=null;
         for(NasRoutes.Route candidate:NasRoutes.plan(credentials,allowLocal))try{if(connectRoute(candidate))return;}catch(SecurityException rejected){throw rejected;}catch(Exception unavailable){last=unavailable;}
@@ -200,12 +205,8 @@ public final class NasClient implements Library.Source {
         if(!MediaLogic.safeRelative(relative)||relative.equals(".")&&movie||info.optLong("id")<=0)throw new IOException("A párosítás nem tartozik a kiválasztott médiatárhoz.");
         String directory=root+"/.synostream/parositasok";long generation=0;
         if(list(root).stream().anyMatch(e->e.directory&&e.name.equals(".synostream"))&&list(root+"/.synostream").stream().anyMatch(e->e.directory&&e.name.equals("parositasok"))){
-            for(Entry entry:list(directory))if(!entry.directory&&entry.name.matches("[0-9a-f]{32}\\.json")&&entry.size<=16384){
-                String owner; synchronized(this){owner=base+"|"+credentials.user;}
-                byte[] bytes=pairingReads.get(owner,entry);if(bytes==null){bytes=readFile(entry.path,16384);pairingReads.put(owner,entry,bytes);}
-                JSONObject event=Pairings.validate(entry.name,bytes);
-                if(event!=null&&event.optString("relative_path").equals(relative)&&event.optString("media_type").equals(movie?"movie":"tv"))generation=Math.max(generation,event.optLong("generation"));
-            }
+            String owner=credentials.address+"|"+credentials.local+"|"+credentials.ddns+"|"+credentials.quick+"|"+credentials.user+"|"+root;
+            generation=pairingIndex.generation(owner,list(directory),relative,movie,entry->{byte[] bytes=pairingReads.get(owner,entry);if(bytes==null){bytes=readFile(entry.path,16384);pairingReads.put(owner,entry,bytes);}return bytes;});
         }
         String identifier=UUID.randomUUID().toString().replace("-","");
         JSONObject event=new JSONObject().put("format_version",1).put("event_id",identifier).put("relative_path",relative).put("media_type",movie?"movie":"tv").put("tmdb_id",info.getLong("id")).put("title",info.optString(movie?"title":"name")).put("deleted",false).put("generation",generation+1).put("created_ns",System.currentTimeMillis()*1_000_000L);
@@ -231,13 +232,14 @@ public final class NasClient implements Library.Source {
         }
     }
 
+    static String unsupportedApi(String api){if(api.equals("SYNO.FileStation.Delete"))return "A NAS nem támogatja ezt a törlési műveletet. A törlés nem indult el.";if(api.equals("SYNO.FileStation.Upload"))return "A NAS nem támogatja a párosításmentést. A helyi korrekció megmarad.";return "A NAS nem támogatja ezt a Download Station-műveletet. Letöltés kijelölés nélkül nem indul.";}
     private static final class ApiState {final String url,server,session;ApiState(String u,String b,String s){url=u;server=b;session=s;}}
     // Called only while holding the client monitor; the returned strings are immutable.
-    private ApiState knownApiState(String api,int version)throws Exception{JSONObject info=apis.getJSONObject(api);if(info.optInt("maxVersion",version)<version)throw new IOException("A NAS nem támogatja az indulás előtti fájlválasztást. A letöltés nem indult el.");return new ApiState(endpoint(info.getString("path")),base,sid);}
+    private ApiState knownApiState(String api,int version)throws Exception{JSONObject info=apis.getJSONObject(api);if(info.optInt("maxVersion",version)<version)throw new IOException(unsupportedApi(api));return new ApiState(endpoint(info.getString("path")),base,sid);}
     private ApiState apiState(String api,int version)throws Exception{
         for(int lookup=0;lookup<2;lookup++){String server;synchronized(this){if(apis.has(api))return knownApiState(api,version);server=base;}
             String url=server+"/webapi/query.cgi?"+form(Map.of("api","SYNO.API.Info","version","1","method","query","query",api));JSONObject discovery=new JSONObject(new String(requestBytes(url,"GET",null,"application/x-www-form-urlencoded",8*1024*1024,15000,server),StandardCharsets.UTF_8));
-            synchronized(this){if(!base.equals(server))continue;JSONObject data=discovery.optJSONObject("data");if(!discovery.optBoolean("success")||data==null||!data.has(api))throw new IOException("A NAS nem támogatja ezt a Download Station-műveletet. Letöltés kijelölés nélkül nem indul.");if(!apis.has(api))apis.put(api,data.getJSONObject(api));return knownApiState(api,version);}
+            synchronized(this){if(!base.equals(server))continue;JSONObject data=discovery.optJSONObject("data");if(!discovery.optBoolean("success")||data==null||!data.has(api))throw new IOException(unsupportedApi(api));if(!apis.has(api))apis.put(api,data.getJSONObject(api));return knownApiState(api,version);}
         }throw new IOException("A NAS-munkamenet lejárt.");
     }
     static final int DEFAULT_API_READ_TIMEOUT=15000,DELETE_READ_TIMEOUT=120000;

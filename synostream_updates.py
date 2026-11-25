@@ -246,7 +246,7 @@ def launch_pending_update(current_version, current_exe, data_dir):
     except (OSError, ValueError, KeyError, TypeError, UpdateError) as error:
         # Updating must never prevent the existing application from opening.
         try: _atomic_json(Path(data_dir) / 'pending_update_error.json', {'error':str(error)})
-        except OSError: logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: launch_pending_update. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except OSError as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: launch_pending_update. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
         return False
 
 
@@ -311,7 +311,7 @@ def acknowledge_update(args, version):
         if job.get('token') != token or job.get('manifest', {}).get('version') != version:
             return
         _atomic_json(receipt, {'version': version, 'token': token})
-    except (ValueError, IndexError, OSError, TypeError, AttributeError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: acknowledge_update. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+    except (ValueError, IndexError, OSError, TypeError, AttributeError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: acknowledge_update. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
 
 
 def cleanup_completed_updates():
@@ -343,7 +343,7 @@ def _retire_failed_install(target):
     """Keep the failed program for diagnosis, freeing the canonical retry path."""
     if target.is_symlink() or target.is_junction(): return
     try: target.rename(target.with_name(target.name + ' - failed-' + uuid.uuid4().hex[:8]))
-    except OSError: logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: _retire_failed_install. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+    except OSError as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: _retire_failed_install. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
 
 
 def _snapshot(data, folder):
@@ -415,7 +415,7 @@ def install_job(job_path, *, wait_parent=_wait_parent, launch=subprocess.Popen, 
                 if ack == {'version': m['version'], 'token': job['token']}:
                     _atomic_json(stage / 'result.json', {'status': 'installed', 'version': m['version']})
                     try: update_shortcut(target / exe.name, old)
-                    except (OSError, subprocess.SubprocessError): logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: install_job. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+                    except (OSError, subprocess.SubprocessError) as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: install_job. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
                     return target
             if process.poll() is not None:
                 lock = acquire_application_lock(data, timeout=10); _restore(data, snapshot); lock.close()
@@ -435,7 +435,7 @@ def helper_main(job_path):
         install_job(job_path); return 0
     except Exception as error:
         try: _atomic_json(Path(job_path).parent / 'error.json', {'error': str(error)})
-        except OSError: logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: helper_main. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+        except OSError as diagnostic_error: logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: helper_main. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
         if os.name == 'nt':
             import ctypes
             ctypes.windll.user32.MessageBoxW(None, str(error), 'SynoStream – frissítés', 0x10)

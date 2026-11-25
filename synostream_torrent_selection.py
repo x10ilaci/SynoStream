@@ -14,9 +14,9 @@ LOCATION_API = 'SYNO.DownloadStation2.Settings.Location'
 SELECTION_APIS = (TASK2, LIST_API, POLL_API, LOCATION_API)
 
 
-def default_file_selected(name):
-    path = str(name or '').replace('\\', '/')
-    return 'sample' not in path.casefold()
+def default_file_selected(name, torrent_root=""):
+    from synostream_logic import is_sample_path
+    return not is_sample_path(name, card_root=torrent_root)
 
 
 def validate_files(metadata):
@@ -127,12 +127,12 @@ class TorrentSelectionMixin:
                     prepared[identifier] = preview
                     results.append(dict(preview))
                 return results
-            except Exception:
+            except Exception as diagnostic_error:
                 for identifier in ids:
                     try:
                         self.discard_prepared(identifier)
-                    except Exception:
-                        logging.getLogger("SynoStream").warning('Nem sikerült egy művelet: prepare. A korábbi adatokat vagy állapotot ellenőrizni kell.')
+                    except Exception as diagnostic_error:
+                        logging.getLogger('SynoStream').warning('Nem sikerült egy művelet: prepare. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
                 raise
 
     def discard_prepared(self, list_id):
