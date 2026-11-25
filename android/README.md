@@ -2,7 +2,7 @@
 
 Synology NAS-on tárolt filmek és sorozatok böngészése, TMDB-médiainformációk, médiatárankénti ajánló, külső videólejátszó indítása és Download Station-kezelés. Magyar és angol felülettel, Android 8.0-tól.
 
-**[Android 0.5.24 release APK letöltése](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk)** · [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.24)
+**[Android 0.5.25 release APK letöltése](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.25/SynoStream_Android_0.5.25.apk)** · [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.25)
 
 A kész APK-hoz nem kell Android Studio vagy Java-fejlesztőkörnyezet. Azonos aláírással a korábbi verzió fölé telepíthető; frissítés előtt ne távolítsd el a régi appot.
 

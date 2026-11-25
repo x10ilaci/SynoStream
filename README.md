@@ -6,14 +6,14 @@
 ## Letöltés
 
 <p align="center">
-<a href="https://github.com/x10ilaci/SynoStream/releases/download/v1.106/SynoStream_1.106_Windows_x64.zip"><img src="docs/images/download-windows.svg" width="360" alt="Windows 1.106 letöltése – teljes ZIP-csomag, 64 bites EXE"></a>
-<a href="https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk"><img src="docs/images/download-android.svg" width="360" alt="Android 0.5.24 letöltése – release APK"></a>
+<a href="https://github.com/x10ilaci/SynoStream/releases/download/v1.107/SynoStream_1.107_Windows_x64.zip"><img src="docs/images/download-windows.svg" width="360" alt="Windows 1.107 letöltése – teljes ZIP-csomag, 64 bites EXE"></a>
+<a href="https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.25/SynoStream_Android_0.5.25.apk"><img src="docs/images/download-android.svg" width="360" alt="Android 0.5.25 letöltése – release APK"></a>
 </p>
 
 | Platform | Aktuális kiadás | Közvetlen letöltés | További fájlok |
 |---|---|---|---|
-| **Windows 10 / 11, 64 bit** | **1.106** | [Teljes ZIP-csomag](https://github.com/x10ilaci/SynoStream/releases/download/v1.106/SynoStream_1.106_Windows_x64.zip) · [Csak az EXE](https://github.com/x10ilaci/SynoStream/releases/download/v1.106/SynoStream_1.106.exe) | [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/v1.106) |
-| **Android 8.0 vagy újabb** | **0.5.24** | [APK telepítő](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk) | [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.24) |
+| **Windows 10 / 11, 64 bit** | **1.107** | [Teljes ZIP-csomag](https://github.com/x10ilaci/SynoStream/releases/download/v1.107/SynoStream_1.107_Windows_x64.zip) · [Csak az EXE](https://github.com/x10ilaci/SynoStream/releases/download/v1.107/SynoStream_1.107.exe) | [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/v1.107) |
+| **Android 8.0 vagy újabb** | **0.5.25** | [APK telepítő](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.25/SynoStream_Android_0.5.25.apk) | [Kiadási jegyzet és forrás](https://github.com/x10ilaci/SynoStream/releases/tag/android-v0.5.25) |
 
 A fenti linkek a kész programokra mutatnak; a GitHub **Code → Download ZIP** gombja a forráskódot tölti le.
 
@@ -58,7 +58,7 @@ A SynoStream a már meglévő médiafájljaidból készít áttekinthető, plak�
 - A NAS-os használathoz File Station és megfelelő mappajogosultság szükséges; a torrentfunkciókhoz Download Station is kell.
 - A TMDB-adatokhoz, ajánlásokhoz és frissítésekhez internetkapcsolat szükséges.
 - A kukaikon valódi NAS-fájlokat töröl, jóváhagyott fájllista alapján. [Törlés és adatkezelés](docs/FAQ.md#törlés)
-- A Windows EXE jelenleg Authenticode-aláírás nélküli. Az Android **0.5.24 nem hibakereshető release APK**; a Play Protect minősítése ettől külön áll. [Telepítési figyelmeztetések](docs/FAQ.md#telepítési-figyelmeztetések)
+- A Windows EXE jelenleg Authenticode-aláírás nélküli. Az Android **0.5.25 nem hibakereshető release APK**; a Play Protect minősítése ettől külön áll. [Telepítési figyelmeztetések](docs/FAQ.md#telepítési-figyelmeztetések)
 
 ## Segítség és fejlesztés
 
