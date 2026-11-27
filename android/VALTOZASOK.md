@@ -1,7 +1,7 @@
-# SynoStream Android 0.5.27
+# SynoStream Android 0.5.28 – helyi lejátszási próbaverzió
 
-- Az MTS videókat a törlési terv is felismeri: az évadválasztás és a hozzájuk tartozó kiegészítő fájlok takarítása nem hagyja ki őket.
-- A protokoll és port nélkül megadott helyi IP-cím / .local cím a DSM helyi HTTP 5000-es portját használja. A teljesen megadott HTTP/HTTPS-cím és egyéni port változatlan marad, a DDNS HTTPS-alapértelmezése is megmarad.
-- A regressziós tesztek minden böngészhető videóformátumhoz törlési tervet készítenek, és ellenőrzik a helyi címek útvonalválasztását.
+- TCP_NODELAY és pufferelt HTTP-fejléc olvasás a helyi streamhídon, a kis adatblokkok indokolatlan várakoztatásának csökkentésére.
+- A médiafájlokat tömörítés nélkül kérjük, hogy a Range-eltolások és Content-Length az eredeti bájtokhoz tartozzanak.
+- Aktív stream és rövid lejátszási türelmi idő alatt az automatikus médiatár-beolvasás halasztódik. A kézzel indított műveleteket nem tiltjuk le.
 
-Release, nem hibakereshető APK; a korábbi aláírás megtartásával. Valódi NAS-on nem történt írás vagy törlés.
+A több eszközön jelzett időszakos akadás teljes okát még nem bizonyítottuk. A módosításokat byte-azonossági, valódi loopback socketes és regressziós tesztek ellenőrzik; készülékes összehasonlító próba szükséges. Release APK, korábbi aláírással.

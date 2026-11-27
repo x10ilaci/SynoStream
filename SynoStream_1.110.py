@@ -1,7 +1,7 @@
 # SynoStream is a Windows media-library and playback application.
 # Copyright (C) 2026 Lőrincz László
 # SPDX-License-Identifier: GPL-3.0-only
-# Modified version: SynoStream 1.109, 2026-11-11.
+# Modified version: SynoStream 1.110, 2026-11-11.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1229,9 +1229,9 @@ except DataDirectoryInUse:
 recover_settings_transaction(BASE_DIR)
 if __name__ == '__main__' and '--smoke-test' not in sys.argv and '--updated-from' not in sys.argv:
     from synostream_updates import launch_pending_update
-    if launch_pending_update('1.109', sys.executable, BASE_DIR):
+    if launch_pending_update('1.110', sys.executable, BASE_DIR):
         raise SystemExit(0)
-backup_before_upgrade(BASE_DIR, "1.109")
+backup_before_upgrade(BASE_DIR, "1.110")
 if os.path.isfile(os.path.join(BASE_DIR, "media_library.db")):
     with contextlib.closing(sqlite3.connect(os.path.join(BASE_DIR, "media_library.db"))) as _preflight:
         if _preflight.execute("PRAGMA user_version").fetchone()[0] > 1:
@@ -1269,7 +1269,7 @@ CARD_SIZE_PRESETS = {
 }
 
 # Minden további alkalmazásmódosításnál a verzió tizedes utáni száma növekszik.
-APP_VERSION = "1.109"
+APP_VERSION = "1.110"
 MAX_POSTER_CACHE_BYTES = 512 * 1024 * 1024
 BACKUP_FORMAT_VERSION = 1
 POSTER_CACHE_LOCK = threading.RLock()
@@ -3227,6 +3227,11 @@ def get_display_playback_state(path):
 _background_workers = []
 
 
+def playback_in_progress():
+    return any(isinstance(worker, _MpvPlaybackMonitor) and worker.process.poll() is None
+               for worker in tuple(_background_workers))
+
+
 def run_worker(worker):
     """Elindítja a szálat, és életben tartja, amíg be nem fejeződik."""
     _background_workers.append(worker)
@@ -4258,6 +4263,7 @@ class RemoteQuickConnectDialog(QDialog):
             return
         dialog = self
         class Handler(BaseHTTPRequestHandler):
+            disable_nagle_algorithm = True
             def do_HEAD(self):
                 self.do_GET(head_only=True)
             def do_GET(self, head_only=False):
@@ -4292,7 +4298,7 @@ class RemoteQuickConnectDialog(QDialog):
                         self.send_header("Connection", "close")
                         self.end_headers()
                         if not head_only:
-                            for chunk in upstream.iter_content(1024 * 1024):
+                            for chunk in upstream.iter_content(32768):
                                 if not chunk: continue
                                 try: self.wfile.write(chunk)
                                 except (BrokenPipeError, ConnectionResetError): break
@@ -6402,6 +6408,8 @@ def _remote_profile_client(profile_id, profile, path):
             _remote_playback_client = client
             return client
     candidate = RemoteNASClient(dict(profile["credentials"]))
+    route = getattr(candidate, "transport", "")
+    LOGGER.info("Lejátszási NAS-kapcsolat: %s", {"local":"helyi", "direct":"DDNS / közvetlen", "quickconnect":"QuickConnect"}.get(route,"ismeretlen"))
     retire = None
     with _remote_playback_lock:
         if _remote_playback_profiles.get(profile_id) is not profile or path not in profile["paths"]:
@@ -6429,6 +6437,7 @@ def _remote_stream_url(remote_path):
             _remote_playback_token = secrets.token_urlsafe(32)
             proxy_token = _remote_playback_token
             class Handler(BaseHTTPRequestHandler):
+                disable_nagle_algorithm = True
                 def do_HEAD(self): self.do_GET(head_only=True)
                 def do_GET(self, head_only=False):
                     from urllib.parse import urlparse, parse_qs
@@ -6465,7 +6474,7 @@ def _remote_stream_url(remote_path):
                                 if upstream.headers.get(key): self.send_header(key,upstream.headers[key])
                             self.send_header("Connection","close"); self.end_headers()
                             if not head_only:
-                                for chunk in upstream.iter_content(1024*1024):
+                                for chunk in upstream.iter_content(32768):
                                     if chunk:
                                         try: self.wfile.write(chunk)
                                         except (BrokenPipeError,ConnectionResetError): break
@@ -8407,6 +8416,7 @@ class DSVideoWindow(QMainWindow):
             configure_nas=self.open_remote_quickconnect,
             library_destinations=self.download_library_destinations,
         ), self)
+        self.downloads_page.playback_active = playback_in_progress
         self.downloads_page.completed.connect(self.on_downloads_completed)
         self.stack.addWidget(self.downloads_page)
         for library in config.get("custom_libraries", []):
@@ -9594,7 +9604,7 @@ class DSVideoWindow(QMainWindow):
 
     def check_library_changes(self):
         if (self.is_closing or self.scanner_thread is not None or getattr(self, '_source_editing', False)
-                or self.pending_override is not None or self._pairing_sync_running): return
+                or self.pending_override is not None or self._pairing_sync_running or playback_in_progress()): return
         try: minutes = max(0, int(config.get('library_refresh_minutes', 5)))
         except (ValueError, TypeError): minutes = 5
         if not minutes or time.monotonic() - self._last_inventory_check < minutes * 60: return

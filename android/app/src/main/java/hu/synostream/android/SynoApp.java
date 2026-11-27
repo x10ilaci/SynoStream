@@ -16,7 +16,7 @@ public final class SynoApp extends Application {
     java.util.function.BooleanSupplier automaticCellular=()->this.networkWatch!=null&&!this.networkWatch.allowLocal();
     java.util.function.Consumer<android.content.Intent> scanServiceStarter=intent->startForegroundService(intent);
     long automaticInterval(){return LibraryRefreshPlan.intervalMinutes(store.get("automatic_library_minutes","5"));}
-    boolean automaticAllowed(){return LibraryRefreshPlan.allowed(automaticInterval(),automaticCellular.getAsBoolean(),Boolean.parseBoolean(store.get("automatic_library_mobile","false")));}
+    boolean automaticAllowed(){return !StreamService.playbackActive()&&LibraryRefreshPlan.allowed(automaticInterval(),automaticCellular.getAsBoolean(),Boolean.parseBoolean(store.get("automatic_library_mobile","false")));}
     void automaticSettingsChanged(){if(scanRunning&&automaticScan)cancelScan(true);automaticLibraries.reset();main.removeCallbacks(automaticTick);if(automaticForeground)main.post(automaticTick);}
     private final Runnable automaticTick=()->checkAutomaticLibraries();
     void automaticForeground(boolean foreground){automaticForeground=foreground;main.removeCallbacks(automaticTick);if(!foreground&&scanRunning&&automaticScan)cancelScan(true);if(foreground)main.postDelayed(automaticTick,1000);}

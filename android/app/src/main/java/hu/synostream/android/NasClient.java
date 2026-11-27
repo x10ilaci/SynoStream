@@ -181,7 +181,7 @@ public final class NasClient implements Library.Source {
         NasClient next=current();if(next!=null)return next.stream(path,range,head);
         for(int attempt=0;attempt<2;attempt++){
             String url,usedSid; synchronized(this){usedSid=sid;url=endpoint(apis.getJSONObject("SYNO.FileStation.Download").getString("path"))+"?"+form(Map.of("api","SYNO.FileStation.Download","version","2","method","download","path",path,"mode","open","_sid",usedSid));}
-            HttpURLConnection c=open(url,head?"HEAD":"GET",30000);if(range!=null)c.setRequestProperty("Range",range);
+            HttpURLConnection c=open(url,head?"HEAD":"GET",30000);c.setRequestProperty("Accept-Encoding","identity");if(range!=null)c.setRequestProperty("Range",range);
             int status=c.getResponseCode();storeCookies(c);
             if(!head&&c.getContentType()!=null&&c.getContentType().toLowerCase(Locale.ROOT).contains("json")){
                 byte[] body;try{InputStream response=status>=400?c.getErrorStream():c.getInputStream();if(response==null)throw new IOException("A fájl nem olvasható (HTTP "+status+").");body=readBounded(response,65536);}catch(Exception e){c.disconnect();throw e;}

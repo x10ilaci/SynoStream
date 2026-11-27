@@ -608,6 +608,8 @@ class DownloadPage(QWidget):
             self.status.setText(self.tr('Feladatlista frissítése…'))
 
     def poll(self):
+        if getattr(self, "playback_active", lambda:False)() and not self.window().isActiveWindow():
+            return
         if not self.dialog_open and not self.busy and not self.closing:
             self.refresh()
 

@@ -373,7 +373,7 @@ class RemoteNASClient:
                 response = self._request('get', url, params={
                     "api": "SYNO.FileStation.Download", "version": version,
                     "method": "download", "path": path, "mode": "open", "_sid": sid,
-                }, headers=headers or {}, stream=True, timeout=(15, 60))
+                }, headers={**(headers or {}), "Accept-Encoding":"identity"}, stream=True, timeout=(15, 60))
                 if "json" in response.headers.get("Content-Type", "").lower():
                     try:
                         code = (nas_json(response).get("error") or {}).get("code")
