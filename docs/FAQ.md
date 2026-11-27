@@ -36,7 +36,7 @@ Ezzel szemben a kártya elrejtése a megjelenítést kezeli; nem azonos a NAS-f�
 
 **Windows:** a jelenlegi EXE nincs Authenticode-tanúsítvánnyal aláírva. A kiadási SHA256 ellenőrzőösszeg a fájl egyezését ellenőrzi, nem helyettesíti a vírusellenőrzést. A hivatalos fájlokat ebből a GitHub-tárból töltsd le.
 
-**Android:** a 0.5.26 már nem hibakereshető release build. A korábbi tanúsítványt az adatmegőrző frissítés érdekében megtartottuk; a tanúsítvány történeti neve és az APK hibakereshetősége két külön dolog.
+**Android:** a 0.5.27 már nem hibakereshető release build. A korábbi tanúsítványt az adatmegőrző frissítés érdekében megtartottuk; a tanúsítvány történeti neve és az APK hibakereshetősége két külön dolog.
 
 Ha a **Play Protect kártékonynak minősíti vagy letiltja** az alkalmazást, őrizd meg a pontos szöveget, a verziószámot és lehetőleg egy személyes adatot nem tartalmazó képernyőképet. A release build önmagában nem garantál Google-jóváhagyást. Ne kapcsold ki a védelmet az ellenőrzés helyett; a jelzést ki kell vizsgálni. [Google tájékoztató a figyelmeztetésekről](https://developers.google.com/android/play-protect/warning-dev-guidance)
 
