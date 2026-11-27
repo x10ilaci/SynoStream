@@ -1,5 +1,4 @@
-# Android 0.5.25 ellenőrzés
+# Android 0.5.26 ellenőrzés
 
-639 JVM release teszt, 19 kiadási Python-teszt; lintRelease és assembleRelease sikeres.
-Az APK manifestje nem hibakereshető és nem testOnly. Aláírása a korábbi kiadásokéval egyezik. Minden melléklet SHA256 értékét, a tiszta Git-munkafát és az APK-hoz tartozó fordítási commitot publikálás előtt ellenőrizzük. A build-provenance.json tartalmazza a tényleges fordítás commitját.
-A Play Protect minősítését ez nem garantálja. Élő NAS-módosítást vagy törlést nem végeztünk; ezek szimulált kiszolgálóval teszteltek.
+645 JVM release teszt és 31 Python kiadásellenőrző teszt sikeres. A lintRelease és az assembleRelease sikeres. Az APK manifestje nem hibakereshető és nem testOnly, az aláírás a korábbi kiadásokéval egyezik. A build-provenance.json rögzíti az APK tényleges fordítási commitját; az összes melléklet ellenőrzőösszegét publikálás előtt ellenőrizzük.
+Élő NAS-törlés vagy írás nem történt. A Play Protect minősítését a release build önmagában nem garantálja.

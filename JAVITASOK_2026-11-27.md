@@ -1,6 +1,6 @@
 # Forrásjavítások – 2026-11-27
 
-Windows 1.107 és Android 0.5.25 munkapéldány; verzióváltás, EXE/APK-készítés és GitHub-publikálás nélkül. A korábban kiadott binárisok nem tartalmazzák ezeket a javításokat.
+A javítások a Windows 1.108 és az Android 0.5.26 kiadásba kerültek. A korábbi kiadások fájljai változatlanok.
 
 - Windows NxM epizódjelölés: a HDTV, v2 és x264 folytatás elfogadott; a külön p/i felbontásjelölés továbbra sem epizódszám.
 - Közös méretalapú sample-előtag kezelés mindkét platformon: legfeljebb 150 × 1024 × 1024 bájt, vagy az ugyanazon mappa legnagyobb videójának szigorúan 10%-a alatt. Méret nélkül marad a korábbi névszabály. Beolvasás, epizódlista, torrentajánlott kijelölés és törlési terv használja. A torrentfájlok kézzel továbbra is kijelölhetők.

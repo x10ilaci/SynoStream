@@ -8,7 +8,7 @@ A kész alkalmazásokhoz nincs szükség fejlesztőkörnyezetre. Ez az oldal a f
 
 | Hely | Tartalom |
 |---|---|
-| `SynoStream_1.107.py` és `synostream_*.py` | Windows alkalmazás és közös feladatokat ellátó Python-modulok |
+| `SynoStream_1.108.py` és `synostream_*.py` | Windows alkalmazás és közös feladatokat ellátó Python-modulok |
 | `tests/` | Windows-regressziós tesztek |
 | `assets/`, `licenses/` | Saját vizuális eszközök és licenctájékoztatók |
 | `android/` | Natív Java Android-alkalmazás |
@@ -23,7 +23,7 @@ Windows 10/11, Python 3.13. A tár gyökerében:
 
 ```powershell
 py -3.13 -m pip install -r requirements.txt -r requirements-dev.txt
-py -3.13 SynoStream_1.107.py
+py -3.13 SynoStream_1.108.py
 ```
 
 Tesztek:
