@@ -4,7 +4,7 @@ import java.util.*;import java.io.*;
 final class MediaDeletion {
  interface Source {List<NasClient.Entry> list(String path)throws Exception;}
  interface Delete {void paths(List<String> values)throws Exception;}
- static final Set<String> VIDEO=Set.of(".mkv",".mp4",".avi",".mov",".wmv",".m4v",".ts",".m2ts",".mpg",".mpeg",".webm");
+ static final Set<String> VIDEO=Set.of(".mkv",".mp4",".avi",".mov",".wmv",".m4v",".ts",".mts",".m2ts",".mpg",".mpeg",".webm");
  static final Set<String> AUX=Set.of(".nfo",".srt",".ass",".ssa",".sub",".idx",".vtt",".sup",".jpg",".jpeg",".png",".txt",".sfv",".srr",".md5",".url",".torrent",".log");
  static final Set<String> EXTRA=Set.of("sample","samples","subs","subtitles","extras","proof","extrafanart");
  static String path(String value){if(value==null||!value.startsWith("/")||value.contains("\\")||value.chars().anyMatch(c->c<32))throw new IllegalArgumentException("Érvénytelen NAS-törlési útvonal.");String[] parts=value.substring(1).split("/",-1);for(String p:parts)if(p.isEmpty()||p.equals(".")||p.equals(".."))throw new IllegalArgumentException("Érvénytelen NAS-törlési útvonal.");return value;}

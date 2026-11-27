@@ -1,7 +1,7 @@
 # SynoStream is a Windows media-library and playback application.
 # Copyright (C) 2026 Lőrincz László
 # SPDX-License-Identifier: GPL-3.0-only
-# Modified version: SynoStream 1.108, 2026-11-11.
+# Modified version: SynoStream 1.109, 2026-11-11.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -75,7 +75,7 @@ def RemoteNASClient(credentials=None, should_stop=None, extra_apis=()):
 
 
 from synostream_logic import (
-    movie_search_context, is_sample_video, media_file_size, largest_video_sizes, release_filename_candidate,
+    movie_search_context, is_sample_video, is_sample_path, library_card_root, VIDEO_SUFFIXES, media_file_size, largest_video_sizes, release_filename_candidate,
     clean_name, normalize_title, parse_episode_position, parse_episode_range_hint,
     title_similarity,
 )
@@ -102,6 +102,7 @@ from PyQt6.QtWidgets import (
 # ==========================================
 UI_LANGUAGE = "hu"
 _UI_TEXTS_EN = {
+    'Helyi NAS-címet adj meg, például https://nas.local:5001 vagy http://192.168.1.2:5000. HTTP csak helyi címhez használható.': 'Enter a local NAS address, such as https://nas.local:5001 or http://192.168.1.2:5000. HTTP is supported only for local addresses.',
     "Megbízható eszköz": "Trusted device",
     "A NAS nem jegyezte meg ezt az eszközt. A következő belépésnél ismét kétlépcsős kódot kérhet. Ellenőrizd a DSM megbízhatóeszköz-beállításait.": "The NAS did not remember this device. It may request a two-step code again at the next login. Check the trusted-device settings in DSM.",
     'NAS-kapcsolat beállítása': 'Configure NAS connection',
@@ -1228,9 +1229,9 @@ except DataDirectoryInUse:
 recover_settings_transaction(BASE_DIR)
 if __name__ == '__main__' and '--smoke-test' not in sys.argv and '--updated-from' not in sys.argv:
     from synostream_updates import launch_pending_update
-    if launch_pending_update('1.108', sys.executable, BASE_DIR):
+    if launch_pending_update('1.109', sys.executable, BASE_DIR):
         raise SystemExit(0)
-backup_before_upgrade(BASE_DIR, "1.108")
+backup_before_upgrade(BASE_DIR, "1.109")
 if os.path.isfile(os.path.join(BASE_DIR, "media_library.db")):
     with contextlib.closing(sqlite3.connect(os.path.join(BASE_DIR, "media_library.db"))) as _preflight:
         if _preflight.execute("PRAGMA user_version").fetchone()[0] > 1:
@@ -1246,7 +1247,7 @@ FALLBACK_LANGUAGE = "en-US"
 DEFAULT_API_KEY = "IDE_JON_A_TMDB_API_KULCS"
 TMDB_BASE = "https://api.themoviedb.org/3"
 IMG_BASE = "https://image.tmdb.org/t/p/w500"
-VIDEO_EXTENSIONS = (".mkv", ".mp4", ".avi", ".mov", ".m4v", ".ts")
+VIDEO_EXTENSIONS = VIDEO_SUFFIXES
 MAX_POSTER_BYTES = 15 * 1024 * 1024
 NO_MATCH_TEXT = "Nem található a TMDB-n. Használd a Videoinformációk lekérését!"
 LOW_CONFIDENCE_TEXT = "Nem található megbízható egyezés a TMDB-n. Használd a Videoinformációk lekérését!"
@@ -1268,7 +1269,7 @@ CARD_SIZE_PRESETS = {
 }
 
 # Minden további alkalmazásmódosításnál a verzió tizedes utáni száma növekszik.
-APP_VERSION = "1.108"
+APP_VERSION = "1.109"
 MAX_POSTER_CACHE_BYTES = 512 * 1024 * 1024
 BACKUP_FORMAT_VERSION = 1
 POSTER_CACHE_LOCK = threading.RLock()
@@ -2387,7 +2388,7 @@ def find_episodes(show_path, should_stop=None):
         for root, dirs, files in os.walk(show_path, onerror=errors.append):
             if should_stop is not None and should_stop():
                 break
-            dirs[:] = [d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d))]
+            dirs[:] = [d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d)) and not is_sample_path(os.path.join(root,d),show_path,directory=True)]
             sample_names = sample_names_in_listing(local_file_listing(root, files))
             for f in files:
                 if f in sample_names: continue
@@ -4271,35 +4272,37 @@ class RemoteQuickConnectDialog(QDialog):
                     self.send_error(403); return
                 if not remote_path or remote_path not in dialog._proxy_allowed_paths:
                     self.send_error(403); return
+                response_started = False
                 try:
                     params = {"api": "SYNO.FileStation.Download", "version": dialog.download_version,
                               "method": "download", "path": remote_path, "mode": "open", "_sid": dialog.sid}
                     headers = {}
                     if self.headers.get("Range"):
                         headers["Range"] = self.headers["Range"]
-                    upstream = dialog._nas_client.open_stream(remote_path, headers)
-                    if upstream.status_code not in (200, 206):
-                        self.send_error(upstream.status_code, "NAS stream hiba"); upstream.close(); return
-                    if "json" in upstream.headers.get("Content-Type", "").lower():
-                        upstream.close()
-                        self.send_error(502, "A NAS nem videófájlt adott vissza.")
-                        return
-                    self.send_response(upstream.status_code)
-                    for key in ("Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Last-Modified", "ETag"):
-                        if upstream.headers.get(key): self.send_header(key, upstream.headers[key])
-                    self.send_header("Connection", "close")
-                    self.end_headers()
-                    if not head_only:
-                        for chunk in upstream.iter_content(1024 * 1024):
-                            if not chunk: continue
-                            try: self.wfile.write(chunk)
-                            except (BrokenPipeError, ConnectionResetError): break
-                    upstream.close()
+                    with contextlib.closing(dialog._nas_client.open_stream(remote_path, headers)) as upstream:
+                        if upstream.status_code not in (200, 206):
+                            self.send_error(upstream.status_code, "NAS stream hiba"); return
+                        if "json" in upstream.headers.get("Content-Type", "").lower():
+                            self.send_error(502, "A NAS nem videófájlt adott vissza.")
+                            return
+                        response_started = True
+                        self.send_response(upstream.status_code)
+                        for key in ("Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Last-Modified", "ETag"):
+                            if upstream.headers.get(key): self.send_header(key, upstream.headers[key])
+                        self.send_header("Connection", "close")
+                        self.end_headers()
+                        if not head_only:
+                            for chunk in upstream.iter_content(1024 * 1024):
+                                if not chunk: continue
+                                try: self.wfile.write(chunk)
+                                except (BrokenPipeError, ConnectionResetError): break
                 except Exception as exc:
                     safe_error = redact_credentials(exc)
                     LOGGER.warning("Távoli NAS-stream hiba: %s", safe_error)
-                    try: self.send_error(502, safe_error[:180])
-                    except Exception: pass
+                    self.close_connection = True
+                    if not response_started:
+                        try: self.send_error(502, safe_error[:180])
+                        except Exception: pass
             def log_message(self, fmt, *args):
                 pass
         self._proxy_server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -4501,7 +4504,7 @@ class EpisodeScanWorker(QThread):
                             name=e.get("name", "")
                             if is_ignored(name) or name in sample_names: continue
                             full=e.get("path") or path.rstrip("/")+"/"+name
-                            if media_is_excluded(REMOTE_PREFIX+full): continue
+                            if media_is_excluded(REMOTE_PREFIX+full) or is_sample_path(full,root,directory=bool(e.get("isdir"))): continue
                             subrel=os.path.join(rel,name) if rel else name
                             if e.get("isdir"):
                                 walk(full,subrel)
@@ -5584,7 +5587,7 @@ class LibraryScannerThread(QThread):
                 for root, dirs, files in os.walk(base, onerror=on_walk_error):
                     if self.isInterruptionRequested():
                         return
-                    dirs[:] = sorted((d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d), self.excluded_paths)), key=natural_sort_key)
+                    dirs[:] = sorted((d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d), self.excluded_paths) and not is_sample_path(os.path.join(root,d),library_card_root(base,os.path.join(root,d)),directory=True)), key=natural_sort_key)
                     files = [name for name in files if not media_is_excluded(os.path.join(root, name), self.excluded_paths)]
                     listing = local_file_listing(root, files)
                     self._nfo_listings[normalize_media_path(root)] = listing
@@ -5887,6 +5890,8 @@ class LibraryScannerThread(QThread):
                 add_info = remote_entry.get("additional") or {}
                 time_info = add_info.get("time") or {}
                 mtime = float(time_info.get("mtime", 0) or 0)
+                if is_movie and is_dir and is_sample_path(remote_path,library_card_root(real_base,remote_path),directory=True):
+                    continue
                 if is_movie and is_dir:
                     pending.append((remote_path, mtime))
                     continue
@@ -6440,6 +6445,7 @@ def _remote_stream_url(remote_path):
                         allowed = profile is not None and path in profile["paths"]
                     if not path or not allowed:
                         self.send_error(403); return
+                    response_started = False
                     try:
                         client = _remote_profile_client(profile_id, profile, path)
                         if client is None:
@@ -6447,28 +6453,29 @@ def _remote_stream_url(remote_path):
                             return
                         headers={}
                         if self.headers.get("Range"): headers["Range"]=self.headers["Range"]
-                        upstream=client.open_stream(path, headers)
-                        if upstream.status_code not in (200,206):
-                            self.send_error(upstream.status_code,"NAS stream hiba"); upstream.close(); return
-                        if "json" in upstream.headers.get("Content-Type", "").lower():
-                            upstream.close()
-                            self.send_error(502, "A NAS nem videófájlt adott vissza.")
-                            return
-                        self.send_response(upstream.status_code)
-                        for key in ("Content-Type","Content-Length","Content-Range","Accept-Ranges","Last-Modified","ETag"):
-                            if upstream.headers.get(key): self.send_header(key,upstream.headers[key])
-                        self.send_header("Connection","close"); self.end_headers()
-                        if not head_only:
-                            for chunk in upstream.iter_content(1024*1024):
-                                if chunk:
-                                    try: self.wfile.write(chunk)
-                                    except (BrokenPipeError,ConnectionResetError): break
-                        upstream.close()
+                        with contextlib.closing(client.open_stream(path, headers)) as upstream:
+                            if upstream.status_code not in (200,206):
+                                self.send_error(upstream.status_code,"NAS stream hiba"); return
+                            if "json" in upstream.headers.get("Content-Type", "").lower():
+                                self.send_error(502, "A NAS nem videófájlt adott vissza.")
+                                return
+                            response_started = True
+                            self.send_response(upstream.status_code)
+                            for key in ("Content-Type","Content-Length","Content-Range","Accept-Ranges","Last-Modified","ETag"):
+                                if upstream.headers.get(key): self.send_header(key,upstream.headers[key])
+                            self.send_header("Connection","close"); self.end_headers()
+                            if not head_only:
+                                for chunk in upstream.iter_content(1024*1024):
+                                    if chunk:
+                                        try: self.wfile.write(chunk)
+                                        except (BrokenPipeError,ConnectionResetError): break
                     except Exception as exc:
                         safe_error = redact_credentials(exc)
                         LOGGER.warning("Távoli NAS-lejátszási proxy hiba: %s", safe_error)
-                        try: self.send_error(502,safe_error[:180])
-                        except Exception: pass
+                        self.close_connection = True
+                        if not response_started:
+                            try: self.send_error(502,safe_error[:180])
+                            except Exception: pass
                 def log_message(self,fmt,*args): pass
             _remote_playback_server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
             _remote_playback_server.daemon_threads=True

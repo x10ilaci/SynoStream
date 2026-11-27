@@ -3,9 +3,9 @@ from dataclasses import dataclass
 import json
 import posixpath as pp
 import re
-from synostream_logic import parse_episode_position, is_sample_path, media_file_size, largest_video_sizes
+from synostream_logic import parse_episode_position, is_sample_path, media_file_size, largest_video_sizes, VIDEO_SUFFIXES
 
-VIDEO = {'.mkv','.mp4','.avi','.mov','.wmv','.m4v','.ts','.m2ts','.mpg','.mpeg','.webm'}
+VIDEO = set(VIDEO_SUFFIXES)
 AUX = {'.nfo','.srt','.ass','.ssa','.sub','.idx','.vtt','.sup','.jpg','.jpeg','.png','.txt','.sfv','.srr','.md5','.url','.torrent','.log'}
 PROTECTED = {'.synostream','#recycle','@eadir','@snapshot'}
 EXTRA_DIRS = {'sample','samples','subs','subtitles','extras','proof','extrafanart'}

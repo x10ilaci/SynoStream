@@ -1,7 +1,7 @@
-# SynoStream Android 0.5.26
+# SynoStream Android 0.5.27
 
-- Közös méretalapú szűrés a sample-előtagú fájlokra: legfeljebb 150 MiB, vagy a mappa legnagyobb videójának 10%-a alatt. Beolvasás, torrentválasztás és törlési terv egyaránt használja; ismeretlen méret nem bizonyíték. A kijelölés kézzel módosítható.
-- A záró perjeles könyvtárgyökér nem rejti el a Samples vagy Extras című műsort.
-- A kiadási eszköz összeveti a tároló frissítési leíróját a kiadási melléklettel; eltérő azonos kiadás nem publikálható. A még régi feedre külön figyelmeztet.
+- Az MTS videókat a törlési terv is felismeri: az évadválasztás és a hozzájuk tartozó kiegészítő fájlok takarítása nem hagyja ki őket.
+- A protokoll és port nélkül megadott helyi IP-cím / .local cím a DSM helyi HTTP 5000-es portját használja. A teljesen megadott HTTP/HTTPS-cím és egyéni port változatlan marad, a DDNS HTTPS-alapértelmezése is megmarad.
+- A regressziós tesztek minden böngészhető videóformátumhoz törlési tervet készítenek, és ellenőrzik a helyi címek útvonalválasztását.
 
-645 JVM release teszt és 31 kiadási Python-teszt sikeres. Nem hibakereshető release APK, a korábbi aláírás megőrzésével.
+Release, nem hibakereshető APK; a korábbi aláírás megtartásával. Valódi NAS-on nem történt írás vagy törlés.

@@ -317,6 +317,17 @@ def movie_search_context(filename, folder_name="", single_movie_folder=False):
 SAMPLE_FOLDERS = {'sample', 'samples', 'extras', 'proof'}
 
 
+VIDEO_SUFFIXES = ('.mkv','.mp4','.avi','.m4v','.mov','.wmv','.ts','.mts','.m2ts','.mpg','.mpeg','.webm')
+
+
+def library_card_root(root, value):
+    root = str(root).replace('\\','/').rstrip('/')
+    value = str(value).replace('\\','/').rstrip('/')
+    if not value.casefold().startswith(root.casefold() + '/'):
+        return root
+    return value[:len(root) + 1 + len(value[len(root)+1:].split('/')[0])]
+
+
 SAMPLE_MAX_BYTES = 150 * 1024 * 1024
 
 
@@ -330,7 +341,7 @@ def largest_video_sizes(files):
     sizes = {}
     for name, size in files:
         name = str(name).replace('\\', '/')
-        if type(size) is int and size >= 0 and re.search(r'(?i)\.(?:mkv|mp4|avi|m4v|mov|wmv|ts|mts|m2ts|mpg|mpeg|webm)$', name):
+        if type(size) is int and size >= 0 and os.path.splitext(name)[1].lower() in VIDEO_SUFFIXES:
             parent = name.rpartition('/')[0]
             sizes[parent] = max(sizes.get(parent, 0), size)
     return sizes

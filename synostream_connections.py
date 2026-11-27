@@ -31,7 +31,7 @@ def normalize_local_url(value):
             authority += ':5000' if parsed.scheme == 'http' else ':5001'
         return urlunsplit((parsed.scheme, authority, '', '', ''))
     except ValueError:
-        raise ValueError('Helyi NAS-cĂ­met adj meg, pĂ©ldĂˇul https://nas.local:5001 vagy http://192.168.1.2:5000. HTTP csak helyi cĂ­mhez hasznĂˇlhatĂł.') from None
+        raise ValueError('Helyi NAS-címet adj meg, például https://nas.local:5001 vagy http://192.168.1.2:5000. HTTP csak helyi címhez használható.') from None
 
 
 def local_nas_host(settings):
