@@ -1,5 +1,5 @@
-# Android 0.5.27 ellenőrzés
+# Android 0.5.28 ellenőrzés
 
-648 sikeres release JVM-teszt és 31 sikeres kiadási Python-teszt. lintRelease és assembleRelease sikeres. A tényleges APK manifestje és aláírása ellenőrzött; debuggable=false, testOnly=false, a korábbi tanúsítvány megmaradt. A fordítás commitját a build-provenance.json rögzíti.
+651 release JVM-teszt és 31 kiadási Python-teszt sikeres. lintRelease és assembleRelease sikeres. A kész APK manifestje nem hibakereshető és nem testOnly; az aláírás folytonossága és a teljes mellékletlista hash-e ellenőrzött.
 
-[Részletes audit](../docs/AUDIT-1.109.md). Valódi NAS-on nem történt írás vagy törlés.
+[Részletes kiadási jelentés](../docs/RELEASE-1.110.md). Az időszakos akadás teljes okát még nem sikerült valós készüléken bizonyítani.
