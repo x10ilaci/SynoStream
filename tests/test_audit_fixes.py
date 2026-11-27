@@ -19,7 +19,7 @@ from test_nas_playback_integration import nas_stream
 def test_torrent_sites_survive_real_process_restart(media, tmp_path, sites):
     media.config['torrent_sites'] = sites
     assert media.save_config()[0]
-    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.107.py'
+    source = Path(__file__).resolve().parents[1] / 'SynoStream_1.108.py'
     script = "import sys,importlib.util,json; from pathlib import Path; p=Path(sys.argv[1]); sys.path.insert(0,str(p.parent)); s=importlib.util.spec_from_file_location('restart_app',p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(json.dumps(m.config['torrent_sites']))"
     env = os.environ.copy()
     env['SYNOSTREAM_DATA_DIR'] = str(tmp_path)

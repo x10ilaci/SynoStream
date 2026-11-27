@@ -20,7 +20,7 @@ public final class NasClient implements Library.Source {
     }
     public static final class Entry {
         public final String name,path; public final boolean directory; public final long size;
-        public int season=-1,episode=-1;public long modified=0;public boolean symbolic=false;public String realPath="";
+        public boolean sizeKnown=true;public int season=-1,episode=-1;public long modified=0;public boolean symbolic=false;public String realPath="";
         public String label(){return season<0?name:String.format(Locale.ROOT,"S%02dE%02d  •  %s",season,episode,name);}
         public Entry(String n,String p,boolean d,long s){name=n;path=p;directory=d;size=s;}
     }
@@ -168,7 +168,7 @@ public final class NasClient implements Library.Source {
             for(int i=0;i<files.length();i++){
                 JSONObject f=files.getJSONObject(i);String n=f.getString("name"),full=f.optString("path",path+"/"+n);
                 if(!seen.add(full))throw new IOException("Ismétlődő NAS-mappalista.");
-                JSONObject extra=f.optJSONObject("additional");Entry entry=new Entry(n,full,f.optBoolean("isdir"),extra==null?0:extra.optLong("size"));if(extra!=null&&extra.optJSONObject("time")!=null)entry.modified=extra.getJSONObject("time").optLong("mtime");entry.symbolic=f.optBoolean("islink",false);if(extra!=null){Object physical=extra.opt("real_path");if(physical instanceof String)entry.realPath=(String)physical;else if(physical instanceof JSONObject)entry.realPath=((JSONObject)physical).optString("real_path","");}if(deletion&&entry.realPath.isBlank())throw new IOException("A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.");result.add(entry);
+                JSONObject extra=f.optJSONObject("additional");Entry entry=new Entry(n,full,f.optBoolean("isdir"),extra==null?0:extra.optLong("size"));entry.sizeKnown=extra!=null&&extra.opt("size") instanceof Number;if(extra!=null&&extra.optJSONObject("time")!=null)entry.modified=extra.getJSONObject("time").optLong("mtime");entry.symbolic=f.optBoolean("islink",false);if(extra!=null){Object physical=extra.opt("real_path");if(physical instanceof String)entry.realPath=(String)physical;else if(physical instanceof JSONObject)entry.realPath=((JSONObject)physical).optString("real_path","");}if(deletion&&entry.realPath.isBlank())throw new IOException("A NAS nem adta meg a fizikai útvonalat; a törlés nem végezhető el biztonságosan.");result.add(entry);
             }
             offset+=files.length();int total=data.optInt("total",-1);
             if(files.length()==0){if(total>offset)throw new IOException("A NAS hiányos mappalistát adott.");break;}

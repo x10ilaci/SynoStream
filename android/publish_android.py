@@ -3,12 +3,13 @@ from pathlib import Path
 import argparse,hashlib,json,subprocess,sys
 from verify_release import verify_apk
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from release_rules import validate_feed,validate_checksums,check_repository,asset_names
+from release_rules import validate_feed,validate_checksums,check_repository,asset_names,validate_repository_feed
 
 def publish(folder,public=False,build_commit=None):
     folder=Path(folder).resolve();manifest=json.loads((folder/'android-update.json').read_text(encoding='utf-8'))
     validate_feed(manifest)
     repo=Path(__file__).resolve().parents[1]
+    if public:validate_repository_feed(repo/'android/update.json',manifest)
     expected=build_commit or manifest['build_commit']
     if expected!=manifest['build_commit']:raise RuntimeError('Eltérő fordítási commit a metaadatban.')
     sha=check_repository(repo,expected)

@@ -42,7 +42,7 @@ def test_window_icon_loss_is_repaired_without_changing_owner_state(media,app):
 
 @pytest.mark.skipif(sys.platform!='win32',reason='Windows native icon lifecycle')
 def test_native_icon_handles_survive_dialogs_state_changes_and_loss(tmp_path):
-    source=Path(__file__).resolve().parents[1]/'SynoStream_1.107.py'
+    source=Path(__file__).resolve().parents[1]/'SynoStream_1.108.py'
     script=r'''
 import ctypes,importlib.util,sys,json
 from pathlib import Path

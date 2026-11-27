@@ -14,9 +14,9 @@ LOCATION_API = 'SYNO.DownloadStation2.Settings.Location'
 SELECTION_APIS = (TASK2, LIST_API, POLL_API, LOCATION_API)
 
 
-def default_file_selected(name, torrent_root=""):
+def default_file_selected(name, torrent_root="", size=None, largest_video_size=None):
     from synostream_logic import is_sample_path
-    return not is_sample_path(name, card_root=torrent_root)
+    return not is_sample_path(name, card_root=torrent_root, size=size, largest_video_size=largest_video_size)
 
 
 def validate_files(metadata):

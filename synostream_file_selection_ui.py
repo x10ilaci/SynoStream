@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget,
                             QTreeWidgetItem, QHeaderView, QPushButton, QDialogButtonBox)
 from synostream_torrent_selection import default_file_selected
-from synostream_logic import torrent_root
+from synostream_logic import torrent_root, largest_video_sizes
 
 
 class FileSelectionDialog(QDialog):
@@ -13,6 +13,7 @@ class FileSelectionDialog(QDialog):
         super().__init__(page)
         self.page, self.previews, self.format_size = page, previews, format_size
         self.torrent_roots = {p["list_id"]: torrent_root(f["name"] for f in p["files"]) for p in self.previews}
+        self.video_sizes = {p["list_id"]: largest_video_sizes((f["name"], f.get("size")) for f in p["files"]) for p in self.previews}
         self.file_items = []
         self.setWindowTitle(page.tr('Letöltendő fájlok kiválasztása'))
         self.resize(820, 560)
@@ -74,7 +75,7 @@ class FileSelectionDialog(QDialog):
                 item = QTreeWidgetItem(folders[tuple(path[:-1])], [path[-1], format_size(file.get('size'))])
                 item.setToolTip(0, file['name'])
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.CheckState.Checked if default_file_selected(file['name'], self.torrent_roots.get(list_id,'')) else Qt.CheckState.Unchecked)
+                item.setCheckState(0, Qt.CheckState.Checked if self.recommended(file, list_id) else Qt.CheckState.Unchecked)
                 self.file_items.append((item, preview['list_id'], file))
             root.setExpanded(True)
         self.tree.blockSignals(False)
@@ -84,6 +85,10 @@ class FileSelectionDialog(QDialog):
             QHeaderView::section {background:#1B191F; color:#A49CAE; border:0; padding:8px;}
             QPushButton#DownloadPrimary {background:#30263C; color:#EEEAF3; border:1px solid #645077;}''')
         self.update_summary()
+
+    def recommended(self, file, list_id):
+        parent = file['name'].replace('\\', '/').rpartition('/')[0]
+        return default_file_selected(file['name'], self.torrent_roots.get(list_id, ''), file.get('size'), self.video_sizes[list_id].get(parent))
 
     def selected_files(self):
         selected = {preview['list_id']: [] for preview in self.previews}
@@ -96,7 +101,7 @@ class FileSelectionDialog(QDialog):
         self.tree.blockSignals(True)
         try:
             for item, list_id, file in self.file_items:
-                checked = mode == 'all' or mode == 'recommended' and default_file_selected(file['name'], self.torrent_roots.get(list_id,''))
+                checked = mode == 'all' or mode == 'recommended' and self.recommended(file, list_id)
                 item.setCheckState(0, Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
         finally:
             self.tree.blockSignals(False)

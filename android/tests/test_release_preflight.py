@@ -43,3 +43,25 @@ def test_publisher_rejects_invalid_feed_before_network(tmp_path,monkeypatch):
  m=feed();m['debuggable']=True
  (tmp_path/'android-update.json').write_text(json.dumps(m))
  with pytest.raises(ValueError):publish_android.publish(tmp_path,True)
+
+
+@pytest.mark.parametrize('key,value',[('version','0.5.26'),('version_code',31),('version_code',29),('min_sdk',27),('filename','other.apk'),('url','https://other.invalid/app.apk'),('sha256','d'*64),('size',101),('signing_certificate_sha256','e'*64),('notes','changed')])
+def test_repository_feed_must_match_release(tmp_path,key,value):
+ from release_rules import validate_repository_feed
+ m=feed();current=dict(m);current[key]=value;p=tmp_path/'update.json';p.write_text(json.dumps(current))
+ with pytest.raises(ValueError):validate_repository_feed(p,m)
+
+def test_feed_without_build_commit_matches_and_older_or_missing_is_warned(tmp_path):
+ from release_rules import validate_repository_feed
+ m=feed();current=dict(m);del current['build_commit'];p=tmp_path/'update.json';p.write_text(json.dumps(current));assert validate_repository_feed(p,m)
+ current['version_code']=29;current['version']='0.5.24';current['filename']='SynoStream_Android_0.5.24.apk';current['url']='https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk';p.write_text(json.dumps(current))
+ with pytest.warns(RuntimeWarning,match='korábbi'):assert not validate_repository_feed(p,m)
+ with pytest.warns(RuntimeWarning,match='hiányzik'):assert not validate_repository_feed(tmp_path/'missing.json',m)
+
+def test_publication_checks_repository_feed_before_network(tmp_path,monkeypatch):
+ import publish_android
+ m=feed();(tmp_path/'android-update.json').write_text(json.dumps(m));seen=[]
+ def mismatch(path,manifest):seen.append(path);raise ValueError('fixture mismatch')
+ monkeypatch.setattr(publish_android,'validate_repository_feed',mismatch)
+ with pytest.raises(ValueError,match='fixture mismatch'):publish_android.publish(tmp_path,True)
+ assert seen and seen[0].name=='update.json'

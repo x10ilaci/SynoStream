@@ -203,7 +203,7 @@ def parse_episode_position(relative_path):
         return season, int(absolute_episode.group(1)), True
 
     # Do not mistake a resolution such as 1280x720 for an episode marker.
-    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,2})\s*x\s*0*(\d{1,3})(?![a-z0-9])", normalized)
+    episode_match = re.search(r"(?i)(?<![A-Za-z0-9])(\d{1,2})\s*x\s*0*(\d{1,3})(?!\d|[pi](?![a-z0-9]))", normalized)
     if episode_match:
         return int(episode_match.group(1)), int(episode_match.group(2)), True
 
@@ -317,12 +317,33 @@ def movie_search_context(filename, folder_name="", single_movie_folder=False):
 SAMPLE_FOLDERS = {'sample', 'samples', 'extras', 'proof'}
 
 
-def is_sample_video(name):
-    """Filename markers, excluding titles beginning with the word Sample."""
+SAMPLE_MAX_BYTES = 150 * 1024 * 1024
+
+
+def media_file_size(entry):
+    value = (entry.get('additional') or {}).get('size', entry.get('size'))
+    return value if type(value) is int and value >= 0 else None
+
+
+def largest_video_sizes(files):
+    """Largest known video size per immediate parent, never across folders."""
+    sizes = {}
+    for name, size in files:
+        name = str(name).replace('\\', '/')
+        if type(size) is int and size >= 0 and re.search(r'(?i)\.(?:mkv|mp4|avi|m4v|mov|wmv|ts|mts|m2ts|mpg|mpeg|webm)$', name):
+            parent = name.rpartition('/')[0]
+            sizes[parent] = max(sizes.get(parent, 0), size)
+    return sizes
+
+
+def is_sample_video(name, size=None, largest_video_size=None):
+    """Explicit markers, plus size evidence for ambiguous Sample-prefixed names."""
     name = str(name or '').replace('\\', '/').rsplit('/', 1)[-1]
     stem = os.path.splitext(name)[0]
-    return bool(re.search(r'(?i)(?:^|[ ._-])sample(?:[ ._-]|$)', name)
-                and not re.match(r'(?i)^sample[ ._-]+\S', stem))
+    if not re.search(r'(?i)(?:^|[ ._-])sample(?:[ ._-]|$)', name): return False
+    if not re.match(r'(?i)^sample[ ._-]+\S', stem): return True
+    if type(size) is not int or size < 0: return False
+    return size <= SAMPLE_MAX_BYTES or (type(largest_video_size) is int and largest_video_size > 0 and size * 10 < largest_video_size)
 
 
 def torrent_root(names):
@@ -330,10 +351,10 @@ def torrent_root(names):
     return parts[0][0] if parts and all(len(p)>1 and p[0]==parts[0][0] for p in parts) else ''
 
 
-def is_sample_path(value, card_root=None, *, torrent=False, directory=False):
+def is_sample_path(value, card_root=None, *, torrent=False, directory=False, size=None, largest_video_size=None):
     value = str(value or '').replace('\\', '/').rstrip('/')
     parts = value.split('/')
-    if not directory and is_sample_video(parts[-1]): return True
+    if not directory and is_sample_video(parts[-1], size, largest_video_size): return True
     folders = parts if directory else parts[:-1]
     if card_root is not None:
         root = str(card_root).replace('\\', '/').rstrip('/')

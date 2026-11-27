@@ -1,7 +1,7 @@
 # SynoStream is a Windows media-library and playback application.
 # Copyright (C) 2026 Lőrincz László
 # SPDX-License-Identifier: GPL-3.0-only
-# Modified version: SynoStream 1.107, 2026-11-11.
+# Modified version: SynoStream 1.108, 2026-11-11.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -75,7 +75,7 @@ def RemoteNASClient(credentials=None, should_stop=None, extra_apis=()):
 
 
 from synostream_logic import (
-    movie_search_context, is_sample_video, release_filename_candidate,
+    movie_search_context, is_sample_video, media_file_size, largest_video_sizes, release_filename_candidate,
     clean_name, normalize_title, parse_episode_position, parse_episode_range_hint,
     title_similarity,
 )
@@ -102,6 +102,8 @@ from PyQt6.QtWidgets import (
 # ==========================================
 UI_LANGUAGE = "hu"
 _UI_TEXTS_EN = {
+    "Megbízható eszköz": "Trusted device",
+    "A NAS nem jegyezte meg ezt az eszközt. A következő belépésnél ismét kétlépcsős kódot kérhet. Ellenőrizd a DSM megbízhatóeszköz-beállításait.": "The NAS did not remember this device. It may request a two-step code again at the next login. Check the trusted-device settings in DSM.",
     'NAS-kapcsolat beállítása': 'Configure NAS connection',
     'Helyi NAS-cím:': 'Local NAS address:',
     'DDNS / közvetlen cím:': 'DDNS / direct HTTPS:',
@@ -1226,9 +1228,9 @@ except DataDirectoryInUse:
 recover_settings_transaction(BASE_DIR)
 if __name__ == '__main__' and '--smoke-test' not in sys.argv and '--updated-from' not in sys.argv:
     from synostream_updates import launch_pending_update
-    if launch_pending_update('1.107', sys.executable, BASE_DIR):
+    if launch_pending_update('1.108', sys.executable, BASE_DIR):
         raise SystemExit(0)
-backup_before_upgrade(BASE_DIR, "1.107")
+backup_before_upgrade(BASE_DIR, "1.108")
 if os.path.isfile(os.path.join(BASE_DIR, "media_library.db")):
     with contextlib.closing(sqlite3.connect(os.path.join(BASE_DIR, "media_library.db"))) as _preflight:
         if _preflight.execute("PRAGMA user_version").fetchone()[0] > 1:
@@ -1266,7 +1268,7 @@ CARD_SIZE_PRESETS = {
 }
 
 # Minden további alkalmazásmódosításnál a verzió tizedes utáni száma növekszik.
-APP_VERSION = "1.107"
+APP_VERSION = "1.108"
 MAX_POSTER_CACHE_BYTES = 512 * 1024 * 1024
 BACKUP_FORMAT_VERSION = 1
 POSTER_CACHE_LOCK = threading.RLock()
@@ -1312,7 +1314,7 @@ sys.excepthook = log_uncaught_exception
 def redact_credentials(value):
     """Remove sensitive values from URLs before displaying or logging errors."""
     return re.sub(
-        r"(?i)([_?&](?:_sid|sid|passwd|password|api_key)=)[^&\s\"']+",
+        r"(?i)([_?&](?:_sid|sid|passwd|password|api_key|device_id|did|otp_code)=)[^&\s\"']+",
         r"\1[redacted]", str(value),
     )
 
@@ -2360,6 +2362,23 @@ def natural_sort_key(s):
     return [int(part) if i % 2 else part.lower() for i, part in enumerate(re.split(r'(\d+)', s))]
 
 
+def sample_names_in_listing(entries):
+    files = [e for e in entries if not e.get('isdir')]
+    sizes = largest_video_sizes((e.get('name', ''), media_file_size(e)) for e in files)
+    return {e.get('name', '') for e in files if is_sample_video(e.get('name', ''), media_file_size(e), sizes.get(''))}
+
+
+def local_file_listing(folder, names):
+    entries = []
+    for name in names:
+        entry = {'name': name, 'isdir': False}
+        if name.lower().endswith(VIDEO_EXTENSIONS):
+            try: entry['size'] = os.stat(os.path.join(folder, name)).st_size
+            except OSError: pass  # Existing scan error handling reports unreadable videos.
+        entries.append(entry)
+    return entries
+
+
 def find_episodes(show_path, should_stop=None):
     """(epizódlista, hibaüzenet). A bejárási hibákat (NAS, jogosultság) nem nyeli le."""
     episodes = []
@@ -2369,7 +2388,9 @@ def find_episodes(show_path, should_stop=None):
             if should_stop is not None and should_stop():
                 break
             dirs[:] = [d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d))]
+            sample_names = sample_names_in_listing(local_file_listing(root, files))
             for f in files:
+                if f in sample_names: continue
                 if f.lower().endswith(VIDEO_EXTENSIONS) and not is_ignored(f):
                     full = os.path.join(root, f)
                     if media_is_excluded(full):
@@ -2491,7 +2512,7 @@ def write_tmdb_metadata_cache(cache_key, payload):
             ''', (cache_key, current_tmdb_language(), json.dumps(payload, ensure_ascii=False), time.time()))
             conn.commit()
     except (OSError, sqlite3.Error, TypeError, ValueError) as diagnostic_error:
-        LOGGER.warning('Nem sikerült egy művelet: write_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
+        LOGGER.warning('Nem sikerült egy művelet: write_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
 
 
 def merge_tmdb_metadata_cache(cache_key, payload):
@@ -2510,7 +2531,7 @@ def merge_tmdb_metadata_cache(cache_key, payload):
                     if isinstance(decoded, dict):
                         existing = decoded
                 except (TypeError, ValueError) as diagnostic_error:
-                    LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
+                    LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
             existing.update(payload)
             conn.execute('''
                 INSERT OR REPLACE INTO tmdb_metadata_cache (cache_key, language, payload, fetched_at)
@@ -2518,7 +2539,7 @@ def merge_tmdb_metadata_cache(cache_key, payload):
             ''', (cache_key, current_tmdb_language(), json.dumps(existing, ensure_ascii=False), time.time()))
             conn.commit()
     except (OSError, sqlite3.Error, TypeError, ValueError) as diagnostic_error:
-        LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s] [%s]', type(diagnostic_error).__name__, type(diagnostic_error).__name__)
+        LOGGER.warning('Nem sikerült egy művelet: merge_tmdb_metadata_cache. A korábbi adatokat vagy állapotot ellenőrizni kell. [%s]', type(diagnostic_error).__name__)
 
 
 def fetch_tmdb_certification_order(country, certification, is_movie):
@@ -4027,6 +4048,8 @@ class RemoteQuickConnectDialog(QDialog):
             ok, error = save_config()
             if not ok:
                 QMessageBox.warning(self, "Mentési figyelmeztetés", redact_credentials(error))
+            if getattr(client, 'device_trust_warning', ''):
+                QMessageBox.warning(self, translate_text("Megbízható eszköz"), translate_text(client.device_trust_warning))
             self.pass_edit.clear()
             self.pass_show_check.setChecked(False)
             self.id_edit.setEnabled(False)
@@ -4473,9 +4496,10 @@ class EpisodeScanWorker(QThread):
                         try: entries = client.list_folder(path)
                         except Exception as exc:
                             errors.append(str(exc)); return
+                        sample_names = sample_names_in_listing(entries)
                         for e in sorted(entries, key=lambda x: natural_sort_key(x.get("name", ""))):
                             name=e.get("name", "")
-                            if is_ignored(name): continue
+                            if is_ignored(name) or name in sample_names: continue
                             full=e.get("path") or path.rstrip("/")+"/"+name
                             if media_is_excluded(REMOTE_PREFIX+full): continue
                             subrel=os.path.join(rel,name) if rel else name
@@ -5562,8 +5586,10 @@ class LibraryScannerThread(QThread):
                         return
                     dirs[:] = sorted((d for d in dirs if not is_ignored(d) and not media_is_excluded(os.path.join(root, d), self.excluded_paths)), key=natural_sort_key)
                     files = [name for name in files if not media_is_excluded(os.path.join(root, name), self.excluded_paths)]
-                    self._nfo_listings[normalize_media_path(root)] = [
-                        {"name": filename, "isdir": False} for filename in files]
+                    listing = local_file_listing(root, files)
+                    self._nfo_listings[normalize_media_path(root)] = listing
+                    samples = sample_names_in_listing(listing)
+                    files = [name for name in files if name not in samples]
                     if self._is_numbered_show_folder(root, files):
                         self.emit_numbered_show_folder(conn, root)
                         self.detected_numbered_show_roots.add(
@@ -5830,6 +5856,8 @@ class LibraryScannerThread(QThread):
                 continue
             self._nfo_listings[normalize_media_path(REMOTE_PREFIX + current)] = entries
             entries = [e for e in entries if not is_ignored(e.get("name", "")) and not media_is_excluded(REMOTE_PREFIX + (e.get("path") or current.rstrip("/") + "/" + e.get("name", "")), self.excluded_paths)]
+            samples = sample_names_in_listing(entries)
+            entries = [e for e in entries if e.get("isdir") or e.get("name", "") not in samples]
             entries.sort(key=lambda e: (-float(((e.get("additional") or {}).get("time") or {}).get("mtime",0) or 0), natural_sort_key(e.get("name", ""))))
             directories = [entry for entry in entries if entry.get("isdir")]
             direct_videos = [
@@ -5972,7 +6000,8 @@ class LibraryScannerThread(QThread):
             def allowed(item):
                 path = folder.rstrip("/") + "/" + item.get("name", "") if remote else os.path.join(folder, item.get("name", ""))
                 return not media_is_excluded(path, self.excluded_paths)
-            count = sum(allowed(item) and not item.get("isdir") and not is_ignored(item.get("name", "")) and not is_sample_video(item.get("name", ""))
+            samples = sample_names_in_listing(self._nfo_listings[key])
+            count = sum(allowed(item) and not item.get("isdir") and not is_ignored(item.get("name", "")) and item.get("name", "") not in samples
                         and item.get("name", "").lower().endswith(VIDEO_EXTENSIONS)
                         for item in self._nfo_listings[key])
             return movie_search_context(filename, folder_name, count == 1)
@@ -6007,7 +6036,8 @@ class LibraryScannerThread(QThread):
                             {"name": item.name, "isdir": item.is_dir()} for item in items]
             entries = self._nfo_listings[folder_key]
             files = [item for item in entries if not item.get("isdir") and not media_is_excluded(folder.rstrip("/") + "/" + item.get("name", "") if is_remote_path(folder) else os.path.join(folder, item.get("name", "")), self.excluded_paths)]
-            video_count = sum(item.get("name", "").lower().endswith(VIDEO_EXTENSIONS) and not is_ignored(item.get("name", "")) and not is_sample_video(item.get("name", "")) for item in files)
+            samples = sample_names_in_listing(files)
+            video_count = sum(item.get("name", "").lower().endswith(VIDEO_EXTENSIONS) and not is_ignored(item.get("name", "")) and item.get("name", "") not in samples for item in files)
             selected = select_nfo_names([item.get("name", "") for item in files], name, is_movie, video_count)
             if selected:
                 filename = selected[0]
@@ -6356,6 +6386,34 @@ _remote_playback_token = None
 _remote_playback_allowed_paths = set()
 _remote_playback_profiles = {}
 
+def _remote_profile_client(profile_id, profile, path):
+    """Authenticate outside the global registry lock, then install one winner."""
+    global _remote_playback_client
+    with _remote_playback_lock:
+        if _remote_playback_profiles.get(profile_id) is not profile or path not in profile["paths"]:
+            return None
+        client = profile["client"]
+        if client is not None and client.sid:
+            _remote_playback_client = client
+            return client
+    candidate = RemoteNASClient(dict(profile["credentials"]))
+    retire = None
+    with _remote_playback_lock:
+        if _remote_playback_profiles.get(profile_id) is not profile or path not in profile["paths"]:
+            retire, client = candidate, None
+        else:
+            client = profile["client"]
+            if client is None or not client.sid:
+                retire = client
+                client = profile["client"] = candidate
+            else:
+                retire = candidate
+            _remote_playback_client = client
+    if retire is not None:
+        retire.close()
+    return client
+
+
 def _remote_stream_url(remote_path):
     global _remote_playback_client, _remote_playback_server, _remote_playback_thread
     global _remote_playback_token
@@ -6383,15 +6441,10 @@ def _remote_stream_url(remote_path):
                     if not path or not allowed:
                         self.send_error(403); return
                     try:
-                        global _remote_playback_client
-                        with _remote_playback_lock:
-                            if _remote_playback_profiles.get(profile_id) is not profile or path not in profile["paths"]:
-                                self.send_error(403)
-                                return
-                            if profile["client"] is None or not profile["client"].sid:
-                                profile["client"] = RemoteNASClient(profile["credentials"])
-                            client = profile["client"]
-                            _remote_playback_client = client
+                        client = _remote_profile_client(profile_id, profile, path)
+                        if client is None:
+                            self.send_error(403)
+                            return
                         headers={}
                         if self.headers.get("Range"): headers["Range"]=self.headers["Range"]
                         upstream=client.open_stream(path, headers)

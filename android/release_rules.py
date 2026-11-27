@@ -1,9 +1,9 @@
 """Pure release metadata and repository preflight. No network or signing-key access."""
 from pathlib import Path
-import argparse,hashlib,json,re,subprocess
+import argparse,hashlib,json,re,subprocess,warnings
 PACKAGE='hu.synostream.android'
 
-def validate_feed(m):
+def validate_feed(m, *, require_build_commit=True):
     def integer(key,minimum,maximum=None):
         v=m.get(key)
         if type(v) is not int or v<minimum or maximum is not None and v>maximum:raise ValueError('Hibás frissítési metaadat: '+key)
@@ -17,8 +17,26 @@ def validate_feed(m):
     if m.get('filename')!=filename or m.get('url')!='https://github.com/x10ilaci/SynoStream/releases/download/android-v'+version+'/'+filename:raise ValueError('Hibás frissítési URL vagy fájlnév.')
     if not isinstance(notes,str) or len(notes.encode('utf-16-le'))//2>32000:raise ValueError('Túl hosszú vagy hibás kiadási jegyzet.')
     if m.get('build_type')!='release' or m.get('debuggable') is not False or m.get('test_only') is not False:raise ValueError('A kiadás nem release csomag.')
-    if not isinstance(m.get('build_commit'),str) or not re.fullmatch(r'[a-f0-9]{40}',m['build_commit']):raise ValueError('Hiányzó fordítási commit.')
+    if (require_build_commit or 'build_commit' in m) and (not isinstance(m.get('build_commit'),str) or not re.fullmatch(r'[a-f0-9]{40}',m['build_commit'])):raise ValueError('Hiányzó fordítási commit.')
     return m
+
+def validate_repository_feed(path, manifest):
+    """Compare a staged feed; an older live feed is normal before publication."""
+    path=Path(path)
+    if not path.exists():
+        warnings.warn('A tároló frissítési leírója még hiányzik; publikálás után kötelező ellenőrizni.', RuntimeWarning)
+        return False
+    current=json.loads(path.read_text(encoding='utf-8-sig'))
+    validate_feed(current,require_build_commit=False)
+    if (current['version_code'] < manifest['version_code']
+            and tuple(map(int,current['version'].split('.'))) < tuple(map(int,manifest['version'].split('.')))):
+        warnings.warn('A tároló még a korábbi kiadást hirdeti; az új feed nincs előkészítve. Publikálás után kötelező frissíteni és ellenőrizni.', RuntimeWarning)
+        return False
+    keys=('format','platform','application_id','version','version_code','min_sdk','filename','url','sha256','size','signing_certificate_sha256','notes','build_type','debuggable','test_only')
+    if any(current.get(key)!=manifest.get(key) for key in keys):
+        raise ValueError('A tároló frissítési leírója eltér a kiadási melléklettől.')
+    return True
+
 
 def check_repository(repo,expected=None):
     def git(*args):return subprocess.check_output(['git','-C',str(repo),*args],text=True,encoding='utf-8').strip()

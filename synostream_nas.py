@@ -217,7 +217,10 @@ class RemoteNASClient:
             raise NASAuthenticationError(f"NAS-bejelentkezés sikertelen (DSM-hibakód: {(payload.get('error') or {}).get('code','ismeretlen')}).")
         self.sid=(payload.get("data") or {}).get("sid", "")
         token = (payload.get("data") or {}).get("did", "")
-        self.device_id = token if trust and isinstance(token,str) and 0 < len(token) <= 4096 and not any(ord(c)<32 for c in token) else ""
+        self.device_id = token if parameters.get('enable_device_token') == 'yes' and isinstance(token,str) and 0 < len(token) <= 4096 and not any(ord(c)<32 for c in token) else ""
+        self.device_trust_warning = (
+            "A NAS nem jegyezte meg ezt az eszközt. A következő belépésnél ismét kétlépcsős kódot kérhet. Ellenőrizd a DSM megbízhatóeszköz-beállításait."
+            if self.credentials.get('remember_device') and not self.device_id and (int(self.auth_version) < 6 or trust or not device) else "")
         li=info.get("SYNO.FileStation.List") or {}; dl=info.get("SYNO.FileStation.Download") or {}
         self.list_version=li.get("maxVersion") or 2
         self.list_url=self._endpoint(li.get("path") or "entry.cgi")

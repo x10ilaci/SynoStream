@@ -1,9 +1,7 @@
-# SynoStream Android 0.5.25
+# SynoStream Android 0.5.26
 
-- Közös sample-szűrés a médiabeolvasásban, törlésben és torrent-fájlkiválasztásban; a médiatár és a műsor gyökere nem sample-almappa.
-- Pontos API-specifikus hiba, ha a NAS-on nem érhető el törlés, feltöltés vagy Download Station.
-- A nyilvános HTTP-kapcsolathoz szükséges jóváhagyás újracsatlakozáskor is érvényesül; magyar és angol figyelmeztetés.
-- A párosítási gyorsítótár és írási zárolás a munkamenetek között is közös. Kompakt generációindex csökkenti a nagy párosítási állományhalmaz újraolvasását; ismeretlen módosítási időnél nem bízunk a gyorsítótárban.
-- A kiadási ellenőrzés minden melléklet hashét, a tiszta Git-munkafát, a fordítás commitját és az APK tényleges metaadatait ellenőrzi, még hálózati feltöltés előtt.
+- Közös méretalapú szűrés a sample-előtagú fájlokra: legfeljebb 150 MiB, vagy a mappa legnagyobb videójának 10%-a alatt. Beolvasás, torrentválasztás és törlési terv egyaránt használja; ismeretlen méret nem bizonyíték. A kijelölés kézzel módosítható.
+- A záró perjeles könyvtárgyökér nem rejti el a Samples vagy Extras című műsort.
+- A kiadási eszköz összeveti a tároló frissítési leíróját a kiadási melléklettel; eltérő azonos kiadás nem publikálható. A még régi feedre külön figyelmeztet.
 
-Release, nem hibakereshető APK; a korábbi aláírás megmarad. Kulcscsere és a meglévő privát kulcs jelszavának módosítása nem történt.
+645 JVM release teszt és 31 kiadási Python-teszt sikeres. Nem hibakereshető release APK, a korábbi aláírás megőrzésével.
