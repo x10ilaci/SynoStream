@@ -6,7 +6,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $sourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$version = "1.110"
+$version = (Get-Content -LiteralPath (Join-Path $sourceDir "release_version.txt") -Raw).Trim()
+if ($version -notmatch '^[1-9]\d{0,3}\.\d{1,4}(?:\.\d{1,4})?$') { throw "Érvénytelen kiadási verzió." }
 $appName = "SynoStream_$version"
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path ([Environment]::GetFolderPath("UserProfile")) "Downloads\SynoStream v$version"
@@ -33,6 +34,9 @@ if ((& $pythonExe -c "import sys; print(f'{sys.version_info.major}.{sys.version_
     throw "A kiadás Python 3.13-mal készül. Megadott értelmező: $pythonExe"
 }
 
+$verifiedVersion = & $pythonExe (Join-Path $sourceDir "release_tools.py") --check-source $sourceDir
+if ($LASTEXITCODE -ne 0 -or $verifiedVersion.Trim() -ne $version) { throw "A forrás verzióellenőrzése sikertelen." }
+
 $pythonRoot = Split-Path -Parent $pythonExe
 $qtBin = Join-Path $pythonRoot "Lib\site-packages\PyQt6\Qt6\bin"
 $safePath = @(
@@ -46,10 +50,10 @@ $safePath = @(
 $originalPath = $env:PATH
 
 $sourceFiles = @(
-    ".gitignore", "BINARY_NOTICES.md", "build_windows.ps1", "LICENSE", "README.md", "release_tools.py", "release_guard.py", "publish_release.py", "synostream_updates.py", "synostream_update_ui.py",
+    ".gitignore", "BINARY_NOTICES.md", "build_windows.ps1", "LICENSE", "README.md", "release_tools.py", "release_version.txt", "release_guard.py", "publish_release.py", "synostream_updates.py", "synostream_update_ui.py",
     "requirements-build.txt", "requirements-dev.txt", "requirements.txt",
     "${appName}.py", "synostream_logic.py", "synostream_nfo.py", "synostream_pairings.py", "synostream_nas.py", "synostream_mpv_install.py", "synostream_storage.py",
-    "synostream_deletion.py", "synostream_delete_ui.py", "synostream_connections.py", "synostream_sources.py", "synostream_source_migration.py", "synostream_source_ui.py", "synostream_source_folders.py", "synostream_recommendations.py", "synostream_recommendation_ui.py", "synostream_library.py", "synostream_playback.py", "synostream_performance.py", "synostream_downloads.py", "synostream_download_ui.py", "synostream_torrent_selection.py", "synostream_file_selection_ui.py", "synostream_window_chrome.py", "synostream_window_identity.py", "CHANGELOG_1.110.md", "JAVITASOK_ES_ELLENORZES.md", "KIVETELEK_ATVIZSGALASA.md", "TESTING.md", "THIRD_PARTY_NOTICES.md"
+    "synostream_deletion.py", "synostream_delete_ui.py", "synostream_connections.py", "synostream_sources.py", "synostream_source_migration.py", "synostream_source_ui.py", "synostream_source_folders.py", "synostream_recommendations.py", "synostream_recommendation_ui.py", "synostream_library.py", "synostream_playback.py", "synostream_performance.py", "synostream_downloads.py", "synostream_download_ui.py", "synostream_torrent_selection.py", "synostream_file_selection_ui.py", "synostream_window_chrome.py", "synostream_window_identity.py", "CHANGELOG_$version.md", "JAVITASOK_ES_ELLENORZES.md", "KIVETELEK_ATVIZSGALASA.md", "TESTING.md", "THIRD_PARTY_NOTICES.md"
 )
 $licensesDir = Join-Path $sourceDir "release_assets\licenses"
 if (-not (Test-Path -LiteralPath $licensesDir -PathType Container)) {

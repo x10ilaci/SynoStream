@@ -1,3 +1,4 @@
 #!/bin/sh
 cd "$(git rev-parse --show-toplevel)" || exit 1
+py -3.13 release_tools.py --check-source . || exit 1
 py -3.13 release_guard.py --git-history || exit 1

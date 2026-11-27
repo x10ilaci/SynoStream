@@ -66,3 +66,8 @@ Részletek: [Android kiadási csatorna](../android/UPDATE_CHANNEL.md), [kiadási
 Dokumentációs módosítás önmagában nem igényel új alkalmazásverziót vagy bináris kiadást. Kiadásnál együtt frissítendő a főoldal letöltési táblázata, az angol README, a letöltőkártyák verziószáma, a telepítési útmutató és a kapcsolódó kiadási jegyzet. A közvetlen linkek a feltöltött, ellenőrzött mellékletekre mutassanak.
 
 A Windows `latest` kiadását az Android-kiadások nem válthatják le. A két platform verziószáma és frissítési csatornája külön kezelt. Egy már nyilvános bináris vagy kiadási melléklet nem írható felül más tartalommal; javításhoz új verzió szükséges.
+
+
+### Kiadási verzió ellenőrzése
+
+A Windows-kiadás kanonikus verziója a `release_version.txt`. Az entry point fájlnevének, az `APP_VERSION` értékének és a changelog nevének ezzel kell egyeznie. A `python release_tools.py --check-source .` ezt a program importálása nélkül ellenőrzi; tag esetén `--tag v<verzió>` is megadható. Ugyanez az ellenőrzés a helyi build és a pre-push hook része. Az Actions a Windows-teszteket a gyökér `tests` mappájából, az Android kiadási Python-teszteket külön az `android` mappából indítja.

@@ -29,11 +29,15 @@ jobs:
       - name: Verify release version
         shell: pwsh
         run: |
-          $releaseVersion = (Get-Content release_version.txt -Raw).Trim()
-          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$releaseVersion") { throw 'Tag and source version differ.' }
-          if (-not (Test-Path "SynoStream_$releaseVersion.py")) { throw 'Missing release entry point.' }
+          $tagArguments = @()
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $tagArguments = @('--tag', $env:GITHUB_REF_NAME) }
+          python release_tools.py --check-source . @tagArguments
+          if ($LASTEXITCODE -ne 0) { throw 'Release source verification failed.' }
       - name: Run regression tests
-        run: python -m pytest -x -q
+        run: python -m pytest -x -q tests
+      - name: Test Android release preflight tools
+        working-directory: android
+        run: python -m pytest -x -q tests
       - name: Build executable, source and update manifest
         shell: pwsh
         run: ./build_windows.ps1 -PythonExecutable (Get-Command python).Source -OutputDirectory "$env:RUNNER_TEMP\SynoStream-release" -SkipDependencyInstall
