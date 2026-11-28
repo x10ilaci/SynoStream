@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "version": "1.111",
+  "filename": "SynoStream_1.111_Windows_x64.zip",
+  "url": "https://github.com/x10ilaci/SynoStream/releases/download/v1.111/SynoStream_1.111_Windows_x64.zip",
+  "sha256": "a82b5dd2e5d3c04436fc05ffa6c2295f92a601861dfe24052e177c60338e5559",
+  "size": 41548290,
+  "exe_sha256": "1a072464113105c4e6093c1e05862ed4e2d84d13711a3662093c7f66d13f73f7",
+  "exe_size": 41749618,
+  "notes": "# SynoStream 1.111\n\n- Gyorsabb torrent-célmappaválasztó: csak mappák lekérése, 200-as lapozás, 60 másodperces gyorsítótár, indulás a megadott célmappából.\n- A foglalt letöltési oldal mellett megnyitott mappaválasztó sorba állítja a kérését; bezáráskor eldobja/megszakítja.\n- Megbízható eszköztoken átadása a Download Stationnek; pontosabb OTP-figyelmeztetés és a visszautasított token elfelejtése.\n- NAS-útvonalak és hitelesített olvasási munkamenetek újrafelhasználása; legfeljebb négy párhuzamos mappalistázás, változatlan TMDB-korlátozással.\n- A kétes Sample-előtagú fájlokat már nem minősíti mintának pusztán a kis méretük miatt.\n- Kevesebb kiegészítő NAS-mező beolvasáskor. A törlés fizikaiútvonal-ellenőrzése és a bizonytalan írások megismétlésének tilalma megmaradt.\n- Név nélküli kérés- és időösszesítések a diagnosztikához. A gyorsulást késleltetett NAS-szimulációban ellenőriztük; valós NAS-on nem mértünk garantált gyorsulást.\n"
+}

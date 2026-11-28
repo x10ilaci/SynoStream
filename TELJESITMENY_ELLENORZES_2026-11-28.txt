@@ -29,6 +29,6 @@ A synostream_diagnostics csak API-nevet, metódust, darabszámot és időt táro
 Androidon NasTimings.snapshot() adja a számlálókat; debug buildben a logcat-összesítés is elérhető. A kiadási kezelőfelület nem kapott technikai mérőszámokat. Útvonal, URL, sid, felhasználónév, jelszó és token nem kerül a mérési adatokba.
 
 Kiadás
-Ez csak forrásjavítás. Új EXE/APK/ZIP nem készült, GitHub-publikálás nem történt. A meglévő binárisok ezeket a változásokat még nem tartalmazzák. Az eredeti v1.54 érintetlen.
+Ez a mérés a kiadás előtti forrásjavításokat dokumentálja. Az ezekből készített Windows 1.111 és Android 0.5.29 binárisok ellenőrzését a docs/RELEASE-1.111.md rögzíti. Az eredeti v1.54 érintetlen.
 
 Végső teszteredmények: Windows 944 sikeres teszt (egy szándékosan hibás ZIP tesztjének figyelmeztetése); Android 665 sikeres JVM-teszt, 38 sikeres Python kiadási eszközteszt. Nincs sikertelen vagy kihagyott teszt.

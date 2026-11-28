@@ -7,8 +7,8 @@
 
 | Platform | Current version | Direct download |
 |---|---|---|
-| **Windows 10 / 11, 64-bit** | **1.110** | [Windows ZIP package](https://github.com/x10ilaci/SynoStream/releases/download/v1.110/SynoStream_1.110_Windows_x64.zip) · [Standalone EXE](https://github.com/x10ilaci/SynoStream/releases/download/v1.110/SynoStream_1.110.exe) |
-| **Android 8.0+** | **0.5.28** | [Release APK](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.28/SynoStream_Android_0.5.28.apk) |
+| **Windows 10 / 11, 64-bit** | **1.111** | [Windows ZIP package](https://github.com/x10ilaci/SynoStream/releases/download/v1.111/SynoStream_1.111_Windows_x64.zip) · [Standalone EXE](https://github.com/x10ilaci/SynoStream/releases/download/v1.111/SynoStream_1.111.exe) |
+| **Android 8.0+** | **0.5.29** | [Release APK](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.29/SynoStream_Android_0.5.29.apk) |
 
 Download the app package, not GitHub's **Code → Download ZIP** source archive. Running the Windows EXE does not require Python. Android updates require the system's installation confirmation.
 
@@ -31,7 +31,7 @@ See [screenshots](README.md#ízelítő-a-felületből), the [setup guide](docs/I
 
 NAS access uses File Station and an account with the necessary folder permissions. Torrent management additionally requires Download Station. Video Station is not required. TMDB metadata and recommendations require your own TMDB API key and internet access. Windows uses MPV for playback; Android uses an external video player.
 
-The trash action deletes real NAS files after review and confirmation. The Windows EXE currently has no Authenticode signature. Android 0.5.28 is a non-debuggable release build; a release build does not guarantee Google Play Protect approval. See the [security and signing policy](CODE_SIGNING_POLICY.md).
+The trash action deletes real NAS files after review and confirmation. The Windows EXE currently has no Authenticode signature. Android 0.5.29 is a non-debuggable release build; a release build does not guarantee Google Play Protect approval. See the [security and signing policy](CODE_SIGNING_POLICY.md).
 
 ## Contributing and license
 

@@ -6,9 +6,9 @@
 
 **Windows 10 / 11, 64 bites rendszer szükséges.** A kész EXE használatához Python telepítése nem kell.
 
-1. [Töltsd le a Windows ZIP-csomagot](https://github.com/x10ilaci/SynoStream/releases/download/v1.110/SynoStream_1.110_Windows_x64.zip).
+1. [Töltsd le a Windows ZIP-csomagot](https://github.com/x10ilaci/SynoStream/releases/download/v1.111/SynoStream_1.111_Windows_x64.zip).
 2. Csomagold ki egy saját, írható mappába. A csomag a futtatható program mellett a licenceket és a szükséges tájékoztatókat is tartalmazza.
-3. Indítsd el a `SynoStream_1.110.exe` fájlt.
+3. Indítsd el a `SynoStream_1.111.exe` fájlt.
 4. A Beállításokban válaszd ki a nyelvet, állítsd be a médiatárakat, és igény szerint add meg a TMDB API-kulcsot.
 
 Az MPV-t szükség esetén a program tölti le. Meglévő MPV elérési útja is megadható. Az MPV lejátszási beállításai a SynoStream Beállítások részében érhetők el.
@@ -21,7 +21,7 @@ A médiatár forrásmappáinál tallózd be a filmeket vagy sorozatokat tartalma
 
 **Android 8.0 vagy újabb rendszer és egy videólejátszó alkalmazás szükséges.** Az Android-változat a NAS-on tárolt médiatárhoz kapcsolódik.
 
-1. [Töltsd le az Android APK-t](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.28/SynoStream_Android_0.5.28.apk).
+1. [Töltsd le az Android APK-t](https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.29/SynoStream_Android_0.5.29.apk).
 2. Nyisd meg a letöltött fájlt. Ha Android külön engedélyt kér az adott forrásból való telepítéshez, azt az általad választott böngészőnek vagy telepítőnek adhatod meg.
 3. Nyisd meg a SynoStreamet, és állítsd be a NAS-kapcsolatot.
 4. Válaszd ki a médiatár mappáját. Lejátszáskor választhatsz a telefon videólejátszói közül.
