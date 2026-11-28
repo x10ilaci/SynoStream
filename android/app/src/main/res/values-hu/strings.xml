@@ -475,4 +475,6 @@
     <string name="http_consent_pending">A nyilvános HTTP-kapcsolatot előbb erősítsd meg a NAS-kapcsolat beállításaiban.</string>
     <string name="nas_delete_unsupported">A NAS nem támogatja ezt a törlési műveletet. A törlés nem indult el.</string>
     <string name="nas_pairing_unsupported">A NAS nem támogatja a párosításmentést. A helyi korrekció megmarad.</string>
+    <string name="folder_load_more">Továbbiak betöltése…</string>
+    <string name="folder_unavailable">A mappa nem olvasható; lehet, hogy törölték vagy átnevezték.</string>
 </resources>

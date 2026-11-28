@@ -476,4 +476,6 @@
     <string name="http_consent_pending">Confirm the public HTTP connection in NAS connection settings first.</string>
     <string name="nas_delete_unsupported">The NAS does not support this delete operation. Deletion was not started.</string>
     <string name="nas_pairing_unsupported">The NAS does not support saving pairings. The local correction is retained.</string>
+    <string name="folder_load_more">Load more…</string>
+    <string name="folder_unavailable">Cannot read this folder. It may have been deleted or renamed.</string>
 </resources>

@@ -142,6 +142,9 @@ public final class NasClient implements Library.Source {
         return base+"/webapi/"+path;
     }
     public JSONObject call(String api,String method,Map<String,String> params) throws Exception {
+        long started=System.nanoTime();try{return callMeasured(api,method,params);}finally{NasTimings.record(api,method,started);}
+    }
+    private JSONObject callMeasured(String api,String method,Map<String,String> params) throws Exception {
         NasClient next=current();if(next!=null)return next.call(api,method,params);
         for(int attempt=0;attempt<2;attempt++){
             NasClient selected=current();if(selected!=null)return selected.call(api,method,params);
@@ -155,9 +158,23 @@ public final class NasClient implements Library.Source {
         }
         throw new IOException("A NAS-munkamenet lejárt.");
     }
+    static Map<String,String> directoryParameters(String path,int offset){Map<String,String> p=new LinkedHashMap<>();p.put("offset",String.valueOf(offset));p.put("limit","200");p.put("sort_by","name");if(path.isEmpty())p.put("onlywritable","true");else{p.put("folder_path",path);p.put("filetype","dir");}return p;}
+    static final class DirectoryPage {final List<Entry> entries;final boolean more;DirectoryPage(List<Entry> e,boolean m){entries=List.copyOf(e);more=m;}}
+    DirectoryPage directoryPage(String path,int offset)throws Exception{
+        if(Thread.currentThread().isInterrupted())throw new InterruptedException();
+        JSONObject data=call("SYNO.FileStation.List",path.isEmpty()?"list_share":"list",directoryParameters(path,offset));
+        JSONArray rows=data.getJSONArray(path.isEmpty()?"shares":"files");List<Entry> result=new ArrayList<>();Set<String> seen=new HashSet<>();
+        for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String name=row.getString("name"),full=row.optString("path",path+"/"+name);if(!seen.add(full))throw new IOException("Ismétlődő NAS-mappalista.");result.add(new Entry(name,full,true,0));}
+        int total=data.optInt("total",-1);if(rows.length()==0&&total>offset)throw new IOException("Hiányos NAS-mappalista.");
+        return new DirectoryPage(result,total>=0?offset+rows.length()<total:rows.length()==200);
+    }
+    public List<Entry> listDirectories(String path)throws Exception{List<Entry> rows=new ArrayList<>();Set<String> seen=new HashSet<>();for(int offset=0;;){DirectoryPage page=directoryPage(path,offset);for(Entry e:page.entries){if(!seen.add(e.path))throw new IOException("Ismétlődő NAS-mappalista.");rows.add(e);}if(!page.more)return rows;offset+=page.entries.size();if(offset>100000)throw new IOException("Túl nagy mappalista.");}}
     public List<Entry> list(String path) throws Exception {return listInternal(path,false);}
     public List<Entry> listForDeletion(String path)throws Exception{return listInternal(path,true);}
     private List<Entry> listInternal(String path,boolean deletion)throws Exception {
+        long started=System.nanoTime();try{return listMeasured(path,deletion);}finally{NasTimings.record("SYNO.FileStation.List","list_folder",started);}
+    }
+    private List<Entry> listMeasured(String path,boolean deletion)throws Exception {
         NasClient next=current();if(next!=null)return deletion?next.listForDeletion(path):next.list(path);
         List<Entry> result=new ArrayList<>();Set<String> seen=new HashSet<>();int offset=0;
         while(true){

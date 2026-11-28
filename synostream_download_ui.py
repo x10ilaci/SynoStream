@@ -1,4 +1,5 @@
 """SynoStream-styled, asynchronous Download Station page and task creation dialogs."""
+import time
 import math
 from pathlib import Path
 
@@ -15,6 +16,8 @@ from synostream_downloads import DownloadStationClient, normalize_destination, v
 
 
 EN = {
+    'Továbbiak betöltése':'Load more',
+    'A mappa nem olvasható. Lehet, hogy törölték vagy átnevezték. ':'Cannot read this folder. It may have been deleted or renamed. ',
     'Torrentoldalak kezelése': 'Manage torrent sites', 'Torrentoldal hozzáadása': 'Add torrent site',
     'Oldal neve:': 'Site name:', 'Webcím:': 'URL:', 'Kijelölt oldal törlése': 'Delete selected site',
     'Mentés': 'Save', 'Adj meg nevet és érvényes HTTP- vagy HTTPS-webcímet.': 'Enter a name and a valid HTTP or HTTPS URL.',
@@ -201,9 +204,13 @@ class ProgressDelegate(QStyledItemDelegate):
 
 
 class FolderDialog(QDialog):
-    def __init__(self, page):
+    def __init__(self, page, initial_path=""):
         super().__init__(page)
-        self.page, self.path, self.closed = page, '', False
+        if page.folder_profile!=page.credentials():
+            page.folder_cache.clear();page.last_directory="";page.folder_profile=dict(page.credentials())
+        initial_path="/"+normalize_destination(initial_path) if initial_path.strip() else ""
+        self.page, self.path, self.closed = page, initial_path, False
+        self.offset=0;self.generation=0
         self.setWindowTitle(page.tr('Letöltési mappa kiválasztása'))
         self.resize(620, 440)
         layout = QVBoxLayout(self)
@@ -218,6 +225,9 @@ class FolderDialog(QDialog):
         layout.addWidget(self.message)
         row = QHBoxLayout()
         self.parent_button = QPushButton(page.tr('Szülőmappa'))
+        self.more_button=QPushButton(page.tr('Továbbiak betöltése'));self.more_button.hide()
+        self.more_button.clicked.connect(lambda:self.load(self.path,self.offset))
+        layout.addWidget(self.more_button)
         self.select_button = QPushButton(page.tr('Kiválasztás'))
         cancel = QPushButton(page.tr('Mégse'))
         for button in (self.parent_button, self.select_button, cancel):
@@ -227,39 +237,35 @@ class FolderDialog(QDialog):
         self.select_button.clicked.connect(self.accept)
         cancel.clicked.connect(self.reject)
         self.items.itemDoubleClicked.connect(lambda item: self.load(item.data(Qt.ItemDataRole.UserRole)))
-        QTimer.singleShot(0, lambda: self.load(''))
+        QTimer.singleShot(0, lambda: self.load(initial_path or getattr(page,'last_directory','')))
 
-    def load(self, path):
-        if self.closed or self.page.busy:
-            return
-        self.items.setEnabled(False)
-        self.select_button.setEnabled(False)
-        self.parent_button.setEnabled(False)
+    def load(self,path,offset=0):
+        if self.closed:return
+        self.generation+=1;generation=self.generation
+        self.path=path
+        self.path_label.setText(path or self.page.tr('Megosztott mappák'))
+        if not offset:self.items.clear()
+        self.items.setEnabled(False);self.more_button.setEnabled(False)
+        self.select_button.setEnabled(False);self.parent_button.setEnabled(False)
         self.message.setText(self.page.tr('Mappalista betöltése…'))
-        def loaded(entries):
-            if self.closed:
-                return
-            self.path = path
-            self.path_label.setText(path or self.page.tr('Megosztott mappák'))
-            self.items.clear()
-            for entry in sorted(entries, key=lambda row: row.get('name', '').casefold()):
-                if not entry.get('isdir', not path):
-                    continue
-                item = QListWidgetItem(entry.get('name', ''))
-                item.setData(Qt.ItemDataRole.UserRole, entry.get('path') or path.rstrip('/') + '/' + entry.get('name', ''))
-                self.items.addItem(item)
-            self.items.setEnabled(True)
-            self.select_button.setEnabled(bool(path))
-            self.parent_button.setEnabled(bool(path))
-            self.message.clear()
+        def loaded(data):
+            if self.closed or generation!=self.generation:return
+            for entry in data['entries']:
+                if not entry.get('isdir',not path):continue
+                item=QListWidgetItem(entry.get('name',''));item.setData(Qt.ItemDataRole.UserRole,entry.get('path') or path.rstrip('/')+'/'+entry.get('name',''));self.items.addItem(item)
+            self.offset=offset+len(data['entries'])
+            self.more_button.setVisible(data['more']);self.more_button.setEnabled(True)
+            self.items.setEnabled(True);self.select_button.setEnabled(bool(path));self.parent_button.setEnabled(bool(path));self.message.clear()
+            self.page.last_directory=path
         def failed(message):
-            if not self.closed:
-                self.message.setText(message)
-                self.parent_button.setEnabled(bool(self.path))
-        self.page.start_operation(lambda client: client.list_folder(path), loaded, failed)
+            if not self.closed and generation==self.generation:
+                self.page.folder_cache.clear();self.message.setText(self.page.tr('A mappa nem olvasható. Lehet, hogy törölték vagy átnevezték. ')+message);self.parent_button.setEnabled(bool(path))
+        self.page.directory_operation(self,path,offset,loaded,failed)
 
-    def done(self, result):
-        self.closed = True
+    def done(self,result):
+        self.closed=True
+        if getattr(self.page,'_folder_current',None) is self and self.page.worker is not None:
+            self.page.worker.requestInterruption()
         super().done(result)
 
 
@@ -338,9 +344,7 @@ class CreateDownloadDialog(QDialog):
             self.set_files(self.files + files)
 
     def browse(self):
-        if self.page.busy:
-            return
-        dialog = FolderDialog(self.page)
+        dialog = FolderDialog(self.page,self.destination.text().strip())
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.destination.setText(normalize_destination(dialog.path))
 
@@ -368,6 +372,7 @@ class DownloadPage(QWidget):
         self.client_factory = DownloadStationClient
         self.client = None
         self.worker = None
+        self.folder_cache={};self.folder_jobs=[];self.folder_profile=None;self.last_directory="";self._folder_current=None
         self.busy = False
         self.closing = False
         self.dialog_open = False
@@ -530,7 +535,27 @@ class DownloadPage(QWidget):
 
     def credentials(self):
         config = self.services.config()
-        return {key: config.get(key, '') for key in ('quickconnect_id', 'nas_username', 'nas_password', 'nas_direct_url', 'nas_local_url')}
+        return {key: config.get(key, '') for key in ('quickconnect_id', 'nas_username', 'nas_password', 'nas_direct_url', 'nas_local_url','nas_device_tokens')}
+
+    def directory_operation(self,dialog,path,offset,success,failure):
+        profile=self.credentials()
+        if self.folder_profile!=profile:
+            self.folder_cache.clear();self.folder_profile=dict(profile);self.last_directory=''
+        cached=self.folder_cache.get((path,offset))
+        if cached and time.monotonic()-cached[0]<60:
+            success(cached[1]);return
+        def start():
+            if dialog.closed:return
+            self._folder_current=dialog
+            def operation(client):
+                if dialog.closed:raise InterruptedError('Megszakítva')
+                return client.list_directories(path,offset=offset,limit=200)
+            def ready(data):
+                if self.credentials()==profile:self.folder_cache[(path,offset)]=(time.monotonic(),data)
+                success(data)
+            self.start_operation(operation,ready,failure)
+        if self.busy:self.folder_jobs.append(start)
+        else:start()
 
     def start_operation(self, operation, success=None, failure=None):
         if self.busy or self.closing:
@@ -593,8 +618,12 @@ class DownloadPage(QWidget):
     def operation_finished(self):
         self.worker = None
         self.busy = False
+        self._folder_current=None
         self._success = self._failure = None
         self.update_controls()
+        while self.folder_jobs and not self.closing:
+            job=self.folder_jobs.pop(0);job()
+            if self.busy:return
         if self._after_operation is not None and not self.closing:
             continuation, self._after_operation = self._after_operation, None
             continuation()

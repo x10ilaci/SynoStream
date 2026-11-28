@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 _data = tempfile.TemporaryDirectory(prefix='synostream-tests-')
 os.environ['SYNOSTREAM_DATA_DIR'] = _data.name
-spec = importlib.util.spec_from_file_location('synostream_app', ROOT / 'SynoStream_1.110.py')
+spec = importlib.util.spec_from_file_location('synostream_app', ROOT / 'SynoStream_1.111.py')
 app_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app_module)
 
@@ -54,3 +54,13 @@ def collect_qt_objects_on_test_thread(app):
     app.processEvents()
     if enabled:
         gc.enable()
+
+
+@pytest.fixture(autouse=True)
+def isolated_nas_caches(monkeypatch):
+    # Independent tests must not inherit a previous test's mocked NAS route/session.
+    from synostream_nas import clear_route_cache
+    from synostream_sessions import pool
+    pool.close();clear_route_cache()
+    yield
+    pool.close();clear_route_cache()

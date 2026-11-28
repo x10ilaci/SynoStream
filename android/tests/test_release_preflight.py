@@ -65,3 +65,29 @@ def test_publication_checks_repository_feed_before_network(tmp_path,monkeypatch)
  monkeypatch.setattr(publish_android,'validate_repository_feed',mismatch)
  with pytest.raises(ValueError,match='fixture mismatch'):publish_android.publish(tmp_path,True)
  assert seen and seen[0].name=='update.json'
+
+
+@pytest.mark.parametrize('fault',['none','missing','older','mismatch','size','hash'])
+def test_strict_postpublication_verification(tmp_path,fault):
+ from publish_android import verify_feed
+ folder=tmp_path/'release';folder.mkdir();m=feed();payload=b'fixture-apk'
+ m.update(size=len(payload),sha256=hashlib.sha256(payload).hexdigest())
+ (folder/m['filename']).write_bytes(payload)
+ (folder/'android-update.json').write_text(json.dumps(m))
+ current=dict(m);repo=tmp_path/'update.json'
+ if fault=='older':
+  current.update(version='0.5.24',version_code=29,filename='SynoStream_Android_0.5.24.apk',url='https://github.com/x10ilaci/SynoStream/releases/download/android-v0.5.24/SynoStream_Android_0.5.24.apk')
+ if fault=='mismatch':current['notes']='different'
+ if fault!='missing':repo.write_text(json.dumps(current))
+ if fault=='size':(folder/m['filename']).write_bytes(payload+b'x')
+ if fault=='hash':(folder/m['filename']).write_bytes(b'X'*len(payload))
+ if fault=='none':assert verify_feed(folder,repo)==m
+ else:
+  with pytest.raises(ValueError):verify_feed(folder,repo)
+
+def test_verify_cli_does_not_publish(tmp_path,monkeypatch):
+ import publish_android
+ from unittest.mock import Mock
+ verify=Mock();publish=Mock();monkeypatch.setattr(publish_android,'verify_feed',verify);monkeypatch.setattr(publish_android,'publish',publish)
+ publish_android.main(['--verify-feed','--folder',str(tmp_path)])
+ verify.assert_called_once();publish.assert_not_called()

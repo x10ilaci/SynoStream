@@ -20,16 +20,18 @@ def validate_feed(m, *, require_build_commit=True):
     if (require_build_commit or 'build_commit' in m) and (not isinstance(m.get('build_commit'),str) or not re.fullmatch(r'[a-f0-9]{40}',m['build_commit'])):raise ValueError('Hiányzó fordítási commit.')
     return m
 
-def validate_repository_feed(path, manifest):
+def validate_repository_feed(path, manifest, *, strict=False):
     """Compare a staged feed; an older live feed is normal before publication."""
     path=Path(path)
-    if not path.exists():
+    if not path.is_file():
+        if strict:raise ValueError('A tároló frissítési leírója hiányzik.')
         warnings.warn('A tároló frissítési leírója még hiányzik; publikálás után kötelező ellenőrizni.', RuntimeWarning)
         return False
     current=json.loads(path.read_text(encoding='utf-8-sig'))
     validate_feed(current,require_build_commit=False)
     if (current['version_code'] < manifest['version_code']
             and tuple(map(int,current['version'].split('.'))) < tuple(map(int,manifest['version'].split('.')))):
+        if strict:raise ValueError('A tároló frissítési leírója korábbi kiadást hirdet.')
         warnings.warn('A tároló még a korábbi kiadást hirdeti; az új feed nincs előkészítve. Publikálás után kötelező frissíteni és ellenőrizni.', RuntimeWarning)
         return False
     keys=('format','platform','application_id','version','version_code','min_sdk','filename','url','sha256','size','signing_certificate_sha256','notes','build_type','debuggable','test_only')

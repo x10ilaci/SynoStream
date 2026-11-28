@@ -15,7 +15,7 @@ def test_nxm_release_suffixes(name):assert parse_episode_position(name)==(2,5,Tr
 @pytest.mark.parametrize('name',['Show 2x05p.mkv','Show 2x05i.mkv','Movie.720x480.mkv'])
 def test_nxm_resolution_suffix_is_still_not_an_episode(name):assert parse_episode_position(name)==(1,None,False)
 
-@pytest.mark.parametrize('size,largest,wanted',[(None,None,False),(-1,9999999999,False),(SAMPLE_MAX_BYTES,None,True),(SAMPLE_MAX_BYTES+1,None,False),(200_000_000,2_000_000_001,True),(200_000_000,2_000_000_000,False)])
+@pytest.mark.parametrize('size,largest,wanted',[(None,None,False),(-1,9999999999,False),(SAMPLE_MAX_BYTES,None,False),(SAMPLE_MAX_BYTES+1,None,False),(200_000_000,2_000_000_001,True),(200_000_000,2_000_000_000,False)])
 @pytest.mark.parametrize('name',['Sample-The.Movie.2019.1080p.mkv','sample_movie.mkv'])
 def test_ambiguous_sample_size_evidence(name,size,largest,wanted):
  assert is_sample_video(name,size,largest)==wanted
@@ -44,7 +44,7 @@ def test_size_aware_scan_and_episode_inventory(media,tmp_path,monkeypatch):
  assert media.sample_names_in_listing([{'name':'sample_x.mkv'},{'name':'main.mkv','size':3_000_000_000}])==set()
 
 def test_size_sample_cleanup_does_not_keep_orphan_folder():
- main=ROOT+'/Movie/Disc/Main.mkv';sample=ROOT+'/Movie/Sample-Movie.mkv';nfo=ROOT+'/Movie/release.nfo'
+ main=ROOT+'/Movie/Main.mkv';sample=ROOT+'/Movie/Sample-Movie.mkv';nfo=ROOT+'/Movie/release.nfo'
  fs=Files([main,sample,nfo]);fs.rows[main]['size']=3_000_000_000;fs.rows[sample]['size']=100_000_000
  inv=Inventory([main],[ROOT],True,fs.list);plan=inv.plan();assert sample in plan.files and nfo in plan.files
  result=inv.execute(plan,fs.delete);assert ROOT+'/Movie' in result['folders']

@@ -17,3 +17,14 @@ A correct release build does not guarantee a Play Protect classification. A harm
 
 A `build_release.ps1` tiszta Git-munkafából fordít, és a commit azonosítóját az ellenőrzött APK SHA256-értékével a `build-provenance.json` fájlban rögzíti. A `publish_android.py` még GitHub-elérés előtt megköveteli ezt a commitot, az APK manifest/aláírás ellenőrzését, a frissítési leíró ellenőrzését és a teljes mellékletlista SHA256-egyezését. A feed a kiadási mellékletek publikálása után kerül a main ágra.
 Az aláírókulcs változatlan; a meglévő rendszerkulcs jelszavát ez a kiadás nem módosítja. A kulcs letétbe helyezése és jelszókezelésének átállítása külön, mentéssel ellenőrzött karbantartás.
+
+
+## Kötelező ellenőrzés publikálás után
+
+A repóbeli `android/update.json` frissítése után futtatandó a tároló gyökeréből:
+
+```powershell
+python android/publish_android.py --verify-feed --folder "<kiadási_mappa>"
+```
+
+Ez összeveti a kiadási `android-update.json` és a repó feedjének mezőit, valamint a helyi APK tényleges méretét és SHA256-értékét. A hiányzó, régebbi vagy eltérő feed hibával leáll; ebben a módban nincs figyelmeztetéses továbbengedés. Ez a parancs nem publikál és nem igényel GitHub-bejelentkezést.

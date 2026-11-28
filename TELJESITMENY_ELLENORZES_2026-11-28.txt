@@ -1,0 +1,34 @@
+SynoStream teljesítmény-ellenőrzés – 2026-11-28
+Windows 1.110 / Android 0.5.28, változatlan verziószámok.
+
+Mérési módszer
+A számok mesterséges NAS-adatokból származnak, nem valós NAS-on vagy korábbi EXE/APK futtatásával mért végfelhasználói eredmények. A listázás szimulált késleltetése 80 ms/kérés. A Windows célmappa-kontrollt a gyorsítás előtt is lefuttattam. A soros/párhuzamos kontrollok azonos mappafát használnak. A képernyő kirajzolási idejét nem mértem.
+
+Mért eredmények
+- Windows célmappa, 5000 bejegyzésből 10 mappa: teljes tartalom listázása 10 kérés / 0,811 s; csak mappák első oldala 1 kérés / 0,080 s. Nincs additional, a filetype=dir szűrés a NAS-kérésben szerepel.
+- Windows célmappaválasztó: 200-as lapozás; a már meglátogatott szülőre visszalépés és az ismételt megnyitás 60 másodpercen belül 0 új kérés. Az elsőként, közvetlenül megnyitott mappa még nem látogatott szülőjéhez természetesen szükséges egy kérés.
+- Windows, 40 almappa és gyökér: 41 soros késleltetés 3,296 s; a tényleges párhuzamos bejárás 41 listázással 0,897 s. Az eredményhalmaz változatlan, ez a soros kontroll idejének 27%-a.
+- Windows változatlan 40 levélmappa: 1 gyökérlistázás; az eddigi biztonságos kihagyási szabály megmaradt. A gyorsítás itt a hitelesített kliens újrafelhasználása, nem a már eddig is kihagyott levélmappák újabb kihagyása.
+- Windows kliensnyitás, ismételt használat és sorozatmegnyitás: a közös profilhoz összesen 1 kliens/hitelesítés; a sorozatmegnyitás 0 további belépés. Négy párhuzamos API-olvasás is 1 hitelesítést használ; egyidejű lejáratnál pontosan 1 megújítás történik.
+- Android, 30 almappa és gyökér: 31 listázás; sorosan 2901 ms, 3 olvasóval 1025 ms (35%). A kártyák sorrendje és tartalma egyezik.
+- Android változatlan 30 levélmappa: 31 helyett 1 listázás; egy levélmappában új film és megváltozott modified esetén 2 listázás.
+- Android célmappa: a helyi HTTP-tesztszerver 1 első oldalas kérést kapott, filetype=dir, limit=200, additional nélkül. A gyorsítótár ismételt használata 0 forráshívás. A teljes UI megjelenítését nem mértem eszközön.
+
+Megőrzött viselkedés és korlátok
+- Csak a NAS-listázások párhuzamosak: Windows legfeljebb 4, Android 3 olvasóval. A TMDB-azonosítás sorrendje és sebességkorlátozása megmaradt.
+- Windowson a munkamenettár profilonként és session_name szerint legfeljebb 4 olvasási kölcsönzést enged. Egy hitelesített NAS-identitást és elkülönített HTTP-olvasókat használ; 5 perc üresjárat után lezár, kilépéskor kijelentkezik. Az OTP-s eszközbeállítás és a külön írási kliens nem kerül bele.
+- Az útvonalgyorsítótár 10 perces, profilazonosítója nem tartalmaz jelszót. Új háttérkliens a működő elérést próbálja először. Kézi újracsatlakozás ismét a teljes helyi / DDNS / QuickConnect sorrendet próbálja. Hibás cache-találat után visszatér a teljes sorrendre. Hálózati/SSL/5xx hibák érvénytelenítik az érintett találatot; clear_route_cache() explicit ürítést biztosít.
+- A QuickConnect felébresztő GET-jét megtartottam. Valós NAS-on nem volt összehasonlítható sikerességi mérés, ezért az elhagyása nem lenne igazolható.
+- Az Android pillanatképek könyvtáranként és profilhoz kötötten tárolódnak. Csak ismert modified és a korábbi kártyákkal egyező levélmappa használható újra. Nem levélmappa, ismeretlen időbélyeg, hiányos cache és teljes újraolvasás esetén listázás történik. Az azonosítás és a kézi párosítás feldolgozása a visszaállított listán is lefut.
+- A többszintű sorozatok szülőjének változatlan modified értéke nem bizonyítja az évadok változatlanságát: ilyen szülő alapján nem hagyjuk ki a teljes fát. Változatlan levélszintű sorozatlista újrahasználható.
+- A törlés real_path mezőt kér, a fizikaiútvonal-ellenőrzés és a friss törlési előellenőrzés megmaradt. A törlés nem használja a beolvasási pillanatképeket. Bizonytalan írási műveletet továbbra sem ismétel a kliens.
+- A mappaválasztó hibánál üríti a cache-t, profilváltáskor elkülönít, bezáráskor megszakítja/eldobja a hozzá tartozó kérést.
+
+Diagnosztika
+A synostream_diagnostics csak API-nevet, metódust, darabszámot és időt tárol. Az összesítés a Windows diagnosztikai naplóba kerül; a per-kérés részletek DEBUG szintűek. A NAS api_get_* műveleti és a tényleges HTTP-mérések külön sorok, időiket nem szabad összeadni. NAS/login, FileStation/List, TMDB/request és NFO/read külön mérhetők. A nyitott stream mérésében a fejlécig tartó idő szerepel, nem a teljes film időtartama.
+Androidon NasTimings.snapshot() adja a számlálókat; debug buildben a logcat-összesítés is elérhető. A kiadási kezelőfelület nem kapott technikai mérőszámokat. Útvonal, URL, sid, felhasználónév, jelszó és token nem kerül a mérési adatokba.
+
+Kiadás
+Ez csak forrásjavítás. Új EXE/APK/ZIP nem készült, GitHub-publikálás nem történt. A meglévő binárisok ezeket a változásokat még nem tartalmazzák. Az eredeti v1.54 érintetlen.
+
+Végső teszteredmények: Windows 944 sikeres teszt (egy szándékosan hibás ZIP tesztjének figyelmeztetése); Android 665 sikeres JVM-teszt, 38 sikeres Python kiadási eszközteszt. Nincs sikertelen vagy kihagyott teszt.

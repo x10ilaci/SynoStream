@@ -5,6 +5,23 @@ from verify_release import verify_apk
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from release_rules import validate_feed,validate_checksums,check_repository,asset_names,validate_repository_feed
 
+def verify_feed(folder,repository_feed=None):
+    folder=Path(folder).resolve()
+    manifest_path=folder if folder.is_file() else folder/'android-update.json'
+    folder=manifest_path.parent
+    manifest=json.loads(manifest_path.read_text(encoding='utf-8-sig'))
+    validate_feed(manifest)
+    if repository_feed is None:repository_feed=Path(__file__).resolve().parent/'update.json'
+    validate_repository_feed(repository_feed,manifest,strict=True)
+    apk=folder/manifest['filename']
+    if not apk.is_file() or apk.stat().st_size!=manifest['size']:
+        raise ValueError('Az APK hiányzik vagy mérete eltér a frissítési leírótól.')
+    with apk.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
+    if digest!=manifest['sha256']:raise ValueError('Az APK SHA256-értéke eltér a frissítési leírótól.')
+    print('Frissítési leíró és APK ellenőrizve: '+manifest['version'],flush=True)
+    return manifest
+
+
 def publish(folder,public=False,build_commit=None):
     folder=Path(folder).resolve();manifest=json.loads((folder/'android-update.json').read_text(encoding='utf-8'))
     validate_feed(manifest)
@@ -50,6 +67,22 @@ def publish(folder,public=False,build_commit=None):
     if public and release['draft']:
         response=client.patch(github.API+'/releases/'+str(release['id']),json={'draft':False,'make_latest':'false'},timeout=30);response.raise_for_status();release=response.json()
     print(('Public: ' if not release['draft'] else 'Draft: ')+release['html_url'],flush=True)
+    if public:
+        print('KÖTELEZŐ következő lépés a repóbeli feed frissítése után: python android/publish_android.py --verify-feed --folder <kiadási_mappa>',flush=True)
 
-if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('folder');parser.add_argument('--publish',action='store_true');parser.add_argument('--build-commit');args=parser.parse_args();publish(args.folder,args.publish,args.build_commit)
+def main(argv=None):
+    parser=argparse.ArgumentParser()
+    parser.add_argument('folder',nargs='?');parser.add_argument('--folder',dest='folder_option')
+    parser.add_argument('--publish',action='store_true');parser.add_argument('--build-commit')
+    parser.add_argument('--verify-feed',action='store_true')
+    args=parser.parse_args(argv)
+    if args.folder and args.folder_option:parser.error('A kiadási mappát csak egyszer add meg.')
+    folder=args.folder_option or args.folder
+    if not folder:parser.error('Add meg a kiadási mappát (--folder).')
+    if args.verify_feed:
+        if args.publish or args.build_commit:parser.error('Az ellenőrzés nem kombinálható publikálással.')
+        return verify_feed(folder)
+    return publish(folder,args.publish,args.build_commit)
+
+
+if __name__=='__main__':main()

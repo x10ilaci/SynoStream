@@ -354,7 +354,7 @@ def is_sample_video(name, size=None, largest_video_size=None):
     if not re.search(r'(?i)(?:^|[ ._-])sample(?:[ ._-]|$)', name): return False
     if not re.match(r'(?i)^sample[ ._-]+\S', stem): return True
     if type(size) is not int or size < 0: return False
-    return size <= SAMPLE_MAX_BYTES or (type(largest_video_size) is int and largest_video_size > 0 and size * 10 < largest_video_size)
+    return type(largest_video_size) is int and largest_video_size > 0 and size * 10 < largest_video_size
 
 
 def torrent_root(names):

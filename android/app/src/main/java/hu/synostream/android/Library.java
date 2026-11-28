@@ -4,6 +4,7 @@ import org.json.*;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.util.concurrent.*;
 
 /** Read-only NAS inventory and independently testable recognition orchestration. */
 public final class Library {
@@ -20,7 +21,17 @@ public final class Library {
     public final Pairings pairings=new Pairings();
     public int foldersRead=0,videosFound=0,nfosRead=0,nfosIgnored=0,nfoWarnings=0,metadataErrors=0,matched=0;
     private final Source nas;private final Recognition recognition;
-    private final Map<String,List<NasClient.Entry>> listings=new HashMap<>();
+    private final Map<String,List<NasClient.Entry>> listings=new ConcurrentHashMap<>();
+    private final Map<String,Object> listingLocks=new ConcurrentHashMap<>();
+    private final Map<String,Long> folderTimes=new ConcurrentHashMap<>();
+    private FolderSnapshots snapshots=new FolderSnapshots("{}");
+    private String scanRoot="";
+    private int listingParallelism=3;
+    void listingParallelism(int count){listingParallelism=Math.max(1,Math.min(3,count));}
+    private ExecutorService listingWorkers;
+    private volatile boolean cancelled;
+    void snapshots(String json){snapshots=new FolderSnapshots(json);}
+    String snapshots(){return snapshots.toString();}
     private final Map<String,Card> previous=new HashMap<>();
     public interface Preview {void update(Card card)throws Exception;}
     private Preview preview;private Runnable inventoryFinished=()->{};private boolean inventory,force;
@@ -38,18 +49,39 @@ public final class Library {
     public Library(NasClient n,String key,TmdbApi.Cache cache){this((Source)n,key.isBlank()?null:new TmdbApi(key,cache));}
     public Library(Source source,Recognition.Api api){nas=source;recognition=api==null?null:new Recognition(api);}
     public void previous(List<Card> cards){for(Card c:cards)previous.put((c.movie?"movie:":"tv:")+c.path,c);}
-    private List<NasClient.Entry> list(String path) throws Exception {check();List<NasClient.Entry> entries=listings.get(path);if(entries==null){entries=nas.list(path);listings.put(path,entries);foldersRead++;}return entries;}
+    private List<NasClient.Entry> list(String path)throws Exception{
+        check();synchronized(listingLocks.computeIfAbsent(path,k->new Object())){
+            List<NasClient.Entry> entries=listings.get(path);if(entries!=null)return entries;
+            if(!force)entries=snapshots.get(path,folderTimes.getOrDefault(path,0L),previous);
+            if(entries==null){entries=List.copyOf(nas.list(path));synchronized(this){foldersRead++;}}
+            check();for(NasClient.Entry e:entries)if(e.directory)folderTimes.put(e.path,e.modified);
+            listings.put(path,entries);return entries;
+        }
+    }
+    private void prefetch(List<NasClient.Entry> entries)throws Exception{
+        if(listingWorkers==null)return;
+        List<Future<?>> jobs=new ArrayList<>();
+        for(NasClient.Entry e:entries)if(e.directory&&!(inventory&&previous.containsKey("tv:"+e.path))&&!MediaLogic.ignored(e.name)&&!MediaLogic.extra(e.name,false)&&!MediaLogic.samplePath(e.path,MediaLogic.cardRoot(scanRoot,e.path),true,false))jobs.add(listingWorkers.submit(()->{try{list(e.path);}catch(Exception failure){throw new CompletionException(failure);}}));
+        try{for(Future<?> job:jobs){check();job.get();}}
+        catch(InterruptedException stopped){cancelled=true;for(Future<?> job:jobs)job.cancel(true);throw stopped;}
+        catch(ExecutionException failed){Throwable cause=failed.getCause();if(cause instanceof CompletionException)cause=cause.getCause();if(cause instanceof Exception)throw (Exception)cause;throw failed;}
+    }
     public List<Card> scan(String root,boolean movie,Progress progress) throws Exception {
         if(root==null||!root.startsWith("/")||root.contains("/../"))throw new IOException("Érvénytelen médiatári gyökér.");
-        listings.clear();pairings.winners.clear();pairings.events=pairings.invalid=0;foldersRead=videosFound=nfosRead=nfosIgnored=nfoWarnings=metadataErrors=matched=metadataFailures=0;
+        scanRoot=root;cancelled=false;listingWorkers=Executors.newFixedThreadPool(listingParallelism);
+        try {
+        listings.clear();listingLocks.clear();folderTimes.clear();pairings.winners.clear();pairings.events=pairings.invalid=0;foldersRead=videosFound=nfosRead=nfosIgnored=nfoWarnings=metadataErrors=matched=metadataFailures=0;
         if(preview!=null){inventory=true;try{List<Card> discovered=new ArrayList<>();if(movie)scanMovies(root,root,0,discovered,n->{});else scanShows(root,discovered,n->{});}finally{inventory=false;}videosFound=0;inventoryFinished.run();}
         readPairs(root);List<Card> cards=new ArrayList<>();
         if(movie)scanMovies(root,root,0,cards,progress);else scanShows(root,cards,progress);
-        cards.sort(Comparator.comparing(c->MediaLogic.normalize(c.title)));return cards;
+        cards.sort(Comparator.comparing(c->MediaLogic.normalize(c.title)));
+        for(Map.Entry<String,List<NasClient.Entry>> entry:listings.entrySet())snapshots.put(entry.getKey(),folderTimes.getOrDefault(entry.getKey(),0L),entry.getValue(),cards);
+        return cards;
+        }finally{cancelled=true;listingWorkers.shutdownNow();listingWorkers=null;NasTimings.summary();}
     }
     private void scanMovies(String root,String folder,int depth,List<Card> cards,Progress progress) throws Exception {
         check();if(depth>24||cards.size()>=10000)throw new IOException("A médiatár túl nagy vagy túl mély; a korábbi lista megmarad.");
-        List<NasClient.Entry> entries=list(folder);long largest=MediaLogic.largestVideoSize(entries);long videoCount=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();long count=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.sampleEntry(e,largest)&&!MediaLogic.extra(e.name,videoCount==1)).count();
+        List<NasClient.Entry> entries=list(folder);prefetch(entries);long largest=MediaLogic.largestVideoSize(entries);long videoCount=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();long count=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.sampleEntry(e,largest)&&!MediaLogic.extra(e.name,videoCount==1)).count();
         String folderName=folder.substring(folder.lastIndexOf('/')+1);
         for(NasClient.Entry e:recent(entries)){check();if(MediaLogic.ignored(e.name)||(!e.directory&&MediaLogic.sampleEntry(e,largest))||MediaLogic.extra(e.name,!e.directory&&videoCount==1))continue;
             if(MediaLogic.samplePath(e.path,MediaLogic.cardRoot(root,e.path),e.directory,false,e.sizeKnown?e.size:-1,largest))continue;
@@ -62,7 +94,7 @@ public final class Library {
     }
     private void scanShows(String root,List<Card> cards,Progress progress) throws Exception {
         Map<String,Card> groups=new LinkedHashMap<>();Map<String,String> sourceNames=new HashMap<>();
-        List<NasClient.Entry> rootEntries=list(root);long largest=MediaLogic.largestVideoSize(rootEntries);long rootVideoCount=rootEntries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();for(NasClient.Entry entry:rootEntries){
+        List<NasClient.Entry> rootEntries=list(root);prefetch(rootEntries);long largest=MediaLogic.largestVideoSize(rootEntries);long rootVideoCount=rootEntries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();for(NasClient.Entry entry:rootEntries){
             check();if(MediaLogic.ignored(entry.name)||(!entry.directory&&MediaLogic.sampleEntry(entry,largest))||MediaLogic.extra(entry.name,!entry.directory&&rootVideoCount==1)||!entry.directory&&!MediaLogic.video(entry.name))continue;
             String group=EpisodeIndex.groupTitle(entry.name,!entry.directory);
             String key=group==null?entry.path:"group:"+MediaLogic.normalize(group);
@@ -169,6 +201,7 @@ public final class Library {
     public static void apply(Card c,JSONObject info){if(info.optLong("id")<=0)return;c.id=info.optLong("id");c.runtime=info.optInt("runtime");c.rating=info.optDouble("vote_average",0);List<String> genreNames=new ArrayList<>();JSONArray genreList=info.optJSONArray("genres");if(genreList!=null)for(int i=0;i<genreList.length();i++){JSONObject genre=genreList.optJSONObject(i);if(genre!=null&&!genre.optString("name").isBlank())genreNames.add(genre.optString("name"));}c.genres=String.join(", ",genreNames);String title=info.optString(c.movie?"title":"name");if(title.isBlank())title=info.optString(c.movie?"original_title":"original_name");if(!title.isBlank())c.title=title;c.overview=info.optString("overview");c.date=info.optString(c.movie?"release_date":"first_air_date");String p=info.optString("poster_path");c.poster=p.startsWith("/")?"https://image.tmdb.org/t/p/w342"+p:"";String b=info.optString("backdrop_path");c.backdrop=b.startsWith("/")?"https://image.tmdb.org/t/p/w780"+b:"";}
     public List<NasClient.Entry> episodes(String root) throws Exception {return episodes(List.of(root));}
     public List<NasClient.Entry> episodes(List<String> roots) throws Exception {
+        cancelled=false;
         List<NasClient.Entry> files=new ArrayList<>();for(String root:roots){if(MediaLogic.VIDEO.matcher(root).matches())files.add(new NasClient.Entry(root.substring(root.lastIndexOf('/')+1),root,false,0));else walk(root,0,files);}
         Set<String> seen=new HashSet<>();files.removeIf(e->!seen.add(e.path));
         String common=roots.get(0);if(MediaLogic.VIDEO.matcher(common).matches())common=common.substring(0,common.lastIndexOf('/'));
@@ -176,9 +209,9 @@ public final class Library {
         List<NasClient.Entry> result=new ArrayList<>();for(EpisodeIndex.Item item:EpisodeIndex.build(files,common)){NasClient.Entry e=new NasClient.Entry(item.file.name,item.file.path,false,item.file.size);e.season=item.season;e.episode=item.episode;result.add(e);}return result;
     }
     private void walk(String root,int depth,List<NasClient.Entry> result) throws Exception {walk(root,depth,result,root);}
-    private void walk(String root,int depth,List<NasClient.Entry> result,String cardRoot) throws Exception {check();if(depth>24||result.size()>=10000)throw new IOException("Túl nagy epizódlista; a korábbi lista megmarad.");List<NasClient.Entry> entries=list(root);long largest=MediaLogic.largestVideoSize(entries);long videoCount=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();for(NasClient.Entry e:entries){if(MediaLogic.ignored(e.name)||(!e.directory&&MediaLogic.sampleEntry(e,largest))||MediaLogic.extra(e.name,!e.directory&&videoCount==1))continue;if(MediaLogic.samplePath(e.path,cardRoot,e.directory,false,e.sizeKnown?e.size:-1,largest))continue;if(e.directory)walk(e.path,depth+1,result,cardRoot);else if(MediaLogic.video(e.name))result.add(e);}}
+    private void walk(String root,int depth,List<NasClient.Entry> result,String cardRoot) throws Exception {check();if(depth>24||result.size()>=10000)throw new IOException("Túl nagy epizódlista; a korábbi lista megmarad.");List<NasClient.Entry> entries=list(root);prefetch(entries);long largest=MediaLogic.largestVideoSize(entries);long videoCount=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();for(NasClient.Entry e:entries){if(MediaLogic.ignored(e.name)||(!e.directory&&MediaLogic.sampleEntry(e,largest))||MediaLogic.extra(e.name,!e.directory&&videoCount==1))continue;if(MediaLogic.samplePath(e.path,cardRoot,e.directory,false,e.sizeKnown?e.size:-1,largest))continue;if(e.directory)walk(e.path,depth+1,result,cardRoot);else if(MediaLogic.video(e.name))result.add(e);}}
     private static List<NasClient.Entry> recent(List<NasClient.Entry> entries){List<NasClient.Entry> ordered=new ArrayList<>(entries);ordered.sort(Comparator.comparingLong((NasClient.Entry e)->e.modified).reversed());return ordered;}
     private boolean containsVideo(String root,int depth)throws Exception{return containsVideo(root,depth,root);}
     private boolean containsVideo(String root,int depth,String cardRoot)throws Exception{check();if(depth>24||listings.size()>=100000)throw new IOException("Túl nagy epizódlista; a korábbi lista megmaradt.");List<NasClient.Entry> entries=list(root);long largest=MediaLogic.largestVideoSize(entries);long count=entries.stream().filter(e->!e.directory&&MediaLogic.video(e.name)&&!MediaLogic.ignored(e.name)&&!MediaLogic.sampleEntry(e,largest)).count();for(NasClient.Entry e:entries){if(MediaLogic.ignored(e.name)||MediaLogic.samplePath(e.path,cardRoot,e.directory,false,e.sizeKnown?e.size:-1,largest)||MediaLogic.extra(e.name,!e.directory&&count==1))continue;if(!e.directory&&MediaLogic.video(e.name)||e.directory&&containsVideo(e.path,depth+1,cardRoot))return true;}return false;}
-    private static void check() throws InterruptedException {if(Thread.currentThread().isInterrupted())throw new InterruptedException();}
+    private void check() throws InterruptedException {if(cancelled||Thread.currentThread().isInterrupted())throw new InterruptedException();}
 }

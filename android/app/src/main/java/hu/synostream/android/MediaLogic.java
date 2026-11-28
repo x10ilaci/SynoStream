@@ -21,7 +21,7 @@ public final class MediaLogic {
         String stem=name.replaceFirst("\\.[^.]+$", "");
         if(!Pattern.compile("(?i)(?:^|[ ._-])sample(?:[ ._-]|$)").matcher(name).find())return false;
         if(!stem.matches("(?i)^sample[ ._-]+\\S.*"))return true;
-        return size>=0&&(size<=SAMPLE_MAX_BYTES||(largest>0&&size<largest/10.0));
+        return size>=0&&largest>0&&size<=(largest-1)/10;
     }
     public static long largestVideoSize(List<NasClient.Entry> entries){long largest=-1;for(NasClient.Entry e:entries)if(!e.directory&&VIDEO.matcher(e.name).matches()&&e.sizeKnown&&e.size>=0)largest=Math.max(largest,e.size);return largest;}
     public static boolean sampleEntry(NasClient.Entry e,long largest){return !e.directory&&sample(e.name,e.sizeKnown?e.size:-1,largest);}

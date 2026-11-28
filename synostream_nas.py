@@ -7,6 +7,8 @@ import re
 import threading
 import time
 import requests
+from requests.sessions import Session as HTTPSession
+from synostream_diagnostics import measure, timed
 from synostream_connections import normalize_local_url
 
 def normalize_direct_url(value):
@@ -80,6 +82,11 @@ class NASOtpRequired(NASAuthenticationError):
     pass
 
 
+_route_lock=threading.Lock()
+_route_cache={}
+def clear_route_cache():
+    with _route_lock:_route_cache.clear()
+
 class RemoteNASClient:
     """One File Station identity over local network, DDNS or QuickConnect."""
     def __init__(self, credentials, should_stop=None, session_name="FileStation", extra_apis=()):
@@ -103,8 +110,10 @@ class RemoteNASClient:
             self.connect()
         except Exception:
             self.session.close()
+            for transport in getattr(self,"_http_all",()):transport.close()
             raise
 
+    @timed("NAS","connect")
     def connect(self):
         self._check_cancelled()
         username = str(self.credentials.get('nas_username') or '').strip()
@@ -115,7 +124,12 @@ class RemoteNASClient:
         if not username or not password or not (local or direct or quick):
             raise RuntimeError('A NAS-kapcsolatnál adj meg legalább egy címet, felhasználónevet és jelszót.')
         routes = [('local', local), ('direct', direct), ('quickconnect', quick)]
-        for route, address in routes:
+        cache_key=nas_device_key(self.credentials)
+        with _route_lock:cached=_route_cache.get(cache_key)
+        if cached and not self.sid and time.monotonic()-cached[0]<600:
+            routes=[(cached[1],cached[2])]+[(r,a) for r,a in routes if (r,a)!=(cached[1],cached[2])]
+        else:cached=None
+        for route_index, (route, address) in enumerate(routes):
             if not address:
                 continue
             self._check_cancelled()
@@ -128,7 +142,13 @@ class RemoteNASClient:
                 cookies.clear()
             try:
                 if route == 'quickconnect':
-                    info = self._discover_quickconnect(address)
+                    if cached and route_index==0 and route=='quickconnect':
+                        self.base_url=address
+                        self.session.headers.update({'User-Agent':'Mozilla/5.0 SynoStream/1.0','Referer':quickconnect_url(quick)+'/'})
+                        q=self._connect_request('get',address+'/webapi/query.cgi',params={'api':'SYNO.API.Info','version':1,'method':'query','query':','.join(('SYNO.API.Auth','SYNO.FileStation.List','SYNO.FileStation.Download')+self.extra_apis)},timeout=(8,15))
+                        try:info=nas_json(q)['data']
+                        finally:q.close()
+                    else:info = self._discover_quickconnect(address)
                 else:
                     self.base_url = address
                     response = self._get(address + '/webapi/query.cgi', params={
@@ -145,11 +165,13 @@ class RemoteNASClient:
                     finally:
                         response.close()
                 self._login_from_info(info, username, password)
+                with _route_lock:_route_cache[cache_key]=(time.monotonic(),route,self.base_url)
                 return
             except (InterruptedError, NASAuthenticationError):
                 raise
             except (requests.RequestException, RuntimeError, ValueError, TypeError, KeyError):
                 self.sid = ''
+                with _route_lock:_route_cache.pop(cache_key,None)
                 continue
         raise RuntimeError('A NAS egyik beállított elérésen sem érhető el. Ellenőrizd a címeket, a hálózatot és a tanúsítványt.') from None
 
@@ -162,7 +184,9 @@ class RemoteNASClient:
         ], timeout=(8, 15))
         r.raise_for_status()
         bases = []
-        for item in nas_json(r) if isinstance(nas_json(r), list) else []:
+        try:discovery=nas_json(r)
+        finally:r.close()
+        for item in discovery if isinstance(discovery, list) else []:
             env = item.get("env") or {}
             if item.get("errno") == 0 and env.get("relay_region"):
                 try:
@@ -174,10 +198,13 @@ class RemoteNASClient:
         self.session.headers.update({"User-Agent": "Mozilla/5.0 SynoStream/1.0", "Referer": quickconnect_url(identifier) + "/"})
         for base in dict.fromkeys(bases):
             try:
-                self._connect_request("get", base, timeout=(8, 15)).raise_for_status()
+                warmup=self._connect_request("get", base, timeout=(8,15))
+                try:warmup.raise_for_status()
+                finally:warmup.close()
                 q = self._connect_request("get", base + "/webapi/query.cgi", params={"api":"SYNO.API.Info", "version":1,
                     "method":"query", "query":",".join(("SYNO.API.Auth", "SYNO.FileStation.List", "SYNO.FileStation.Download") + self.extra_apis)}, timeout=(8, 15))
-                q.raise_for_status(); data=q.json()
+                try:q.raise_for_status(); data=nas_json(q)
+                finally:q.close()
                 if data.get("success"):
                     self.base_url=base; api_data=data["data"]; break
             except InterruptedError:
@@ -188,6 +215,7 @@ class RemoteNASClient:
             raise RuntimeError(f"A QuickConnect API nem érhető el: {last_error or 'nincs közvetítői cím'}")
         return api_data
 
+    @timed("NAS", "login")
     def _login_from_info(self, info, username, password):
         self.api_info = info
         auth=info.get("SYNO.API.Auth") or {}
@@ -220,7 +248,7 @@ class RemoteNASClient:
         self.device_id = token if parameters.get('enable_device_token') == 'yes' and isinstance(token,str) and 0 < len(token) <= 4096 and not any(ord(c)<32 for c in token) else ""
         self.device_trust_warning = (
             "A NAS nem jegyezte meg ezt az eszközt. A következő belépésnél ismét kétlépcsős kódot kérhet. Ellenőrizd a DSM megbízhatóeszköz-beállításait."
-            if self.credentials.get('remember_device') and not self.device_id and (int(self.auth_version) < 6 or trust or not device) else "")
+            if trust and not self.device_id else "")
         li=info.get("SYNO.FileStation.List") or {}; dl=info.get("SYNO.FileStation.Download") or {}
         self.list_version=li.get("maxVersion") or 2
         self.list_url=self._endpoint(li.get("path") or "entry.cgi")
@@ -234,10 +262,42 @@ class RemoteNASClient:
             raise ValueError('Érvénytelen NAS API-útvonal.')
         return self.base_url.rstrip('/') + '/webapi/' + path
 
-    def _request(self, method, url, **kwargs):
+    def _request(self,method,url,**kwargs):
+        parameters=kwargs.get('params') or kwargs.get('data') or {}
+        if not isinstance(parameters,dict):parameters={}
+        with measure(parameters.get('api','NAS'),parameters.get('method',method)):
+            return self._http_request(method,url,**kwargs)
+
+    def _http_request(self, method, url, **kwargs):
         if getattr(self, 'transport', '') in ('local', 'direct'):
             kwargs['allow_redirects'] = False
-        response = getattr(self.session, method)(url, **kwargs)
+        # Each reader owns an HTTP session/connection pool. Only identity snapshots
+        # and cookie publication need the shared lock, never the socket wait.
+        transport=self.session
+        if method.lower()=="get" and isinstance(transport,HTTPSession) and method not in vars(transport):
+            with self.lock:
+                if not hasattr(self,'_http_idle'):self._http_idle=[];self._http_all=set()
+                transport=self._http_idle.pop() if self._http_idle else HTTPSession()
+                self._http_all.add(transport)
+                transport.headers.clear();transport.headers.update(self.session.headers)
+                transport.cookies=self.session.cookies.copy()
+                transport.proxies=dict(self.session.proxies)
+                for setting in ('verify','cert','trust_env','max_redirects'):setattr(transport,setting,getattr(self.session,setting))
+                used_sid=self.sid
+            try:
+                response=getattr(transport,method)(url,**kwargs)
+                with self.lock:
+                    if self.sid==used_sid:self.session.cookies.update(transport.cookies)
+            except (requests.ConnectionError,requests.Timeout):
+                with _route_lock:_route_cache.pop(nas_device_key(self.credentials),None)
+                raise
+            finally:
+                with self.lock:
+                    if len(self._http_idle)<4:self._http_idle.append(transport)
+                    else:transport.close();self._http_all.discard(transport)
+        else:response = getattr(transport, method)(url, **kwargs)
+        if isinstance(response.status_code,int) and response.status_code>=500:
+            with _route_lock:_route_cache.pop(nas_device_key(self.credentials),None)
         if getattr(self, 'transport', '') in ('local', 'direct') and 300 <= response.status_code < 400:
             response.close()
             raise RuntimeError('A közvetlen NAS-cím átirányítást adott. A végleges HTTP-/HTTPS-címet add meg.')
@@ -254,7 +314,9 @@ class RemoteNASClient:
             # Safe reads can change route before any bytes reach the caller.
             # Never replay POSTs: a torrent/upload may already have been accepted.
             old_base = self.base_url.rstrip('/')
-            self.connect()
+            with self.lock:
+                clear_route_cache()
+                self.connect()
             if not url.startswith(old_base + '/'):
                 raise RuntimeError('A NAS-kérés nem a kiválasztott kapcsolathoz tartozik.') from None
             api = params.get('api')
@@ -299,48 +361,55 @@ class RemoteNASClient:
             time.sleep(min(0.05, max(0, deadline - time.monotonic())))
 
     def api_get(self, api, version, method, **kwargs):
-        # Serialize requests and session renewal; never repeat state-changing calls.
-        with self.lock:
-            renewed = False
-            for attempt in range(3):
-                self._check_cancelled()
-                try:
-                    params = dict(api=api, version=version, method=method, _sid=self.sid, **kwargs)
+        with measure(api,"api_get_"+method):return self._api_get(api,version,method,**kwargs)
+
+    def _api_get(self, api, version, method, **kwargs):
+        renewed = False
+        for attempt in range(3):
+            self._check_cancelled()
+            try:
+                with self.lock:
+                    sid=self.sid
+                    params = dict(api=api, version=version, method=method, _sid=sid, **kwargs)
                     info = getattr(self, "api_info", {}).get(api) or {}
                     endpoint = self._endpoint(info["path"]) if info.get("path") else self.list_url
-                    response = self._get(endpoint, params=params, timeout=(8, 30))
-                    try:
-                        response.raise_for_status()
-                        payload = nas_json(response)
-                    finally:
-                        response.close()
-                    if not isinstance(payload, dict):
-                        raise RuntimeError("A NAS nem értelmezhető API-választ adott.")
-                    if payload.get("success"):
-                        return payload.get("data") or {}
-                    code = (payload.get("error") or {}).get("code")
-                    if code in (106, 107, 119) and not renewed:
-                        self.connect()
-                        renewed = True
-                        continue
-                    raise RuntimeError("NAS-jogosultság vagy munkamenethiba (DSM: %s)." % code)
-                except (requests.ConnectionError, requests.Timeout):
-                    if attempt == 2:
-                        raise RuntimeError("A NAS nem érhető el. Ellenőrizd a hálózatot, majd próbáld újra.") from None
-                    self._pause(0.5 * 2 ** attempt)
-                except requests.HTTPError as exc:
-                    if exc.response.status_code not in (429, 502, 503, 504) or attempt == 2:
-                        raise
-                    self._pause(0.5 * 2 ** attempt)
-            raise RuntimeError("A NAS-művelet nem sikerült az újrapróbálkozások után.")
+                response = self._get(endpoint, params=params, timeout=(8, 30))
+                try:
+                    response.raise_for_status()
+                    payload = nas_json(response)
+                finally:
+                    response.close()
+                if not isinstance(payload, dict):
+                    raise RuntimeError("A NAS nem értelmezhető API-választ adott.")
+                if payload.get("success"):
+                    return payload.get("data") or {}
+                code = (payload.get("error") or {}).get("code")
+                if code in (106, 107, 119) and not renewed:
+                    with self.lock:
+                        if self.sid==sid:self.connect()
+                    renewed = True
+                    continue
+                raise RuntimeError("NAS-jogosultság vagy munkamenethiba (DSM: %s)." % code)
+            except (requests.ConnectionError, requests.Timeout):
+                if attempt == 2:
+                    raise RuntimeError("A NAS nem érhető el. Ellenőrizd a hálózatot, majd próbáld újra.") from None
+                self._pause(0.5 * 2 ** attempt)
+            except requests.HTTPError as exc:
+                if exc.response.status_code not in (429, 502, 503, 504) or attempt == 2:
+                    raise
+                self._pause(0.5 * 2 ** attempt)
+        raise RuntimeError("A NAS-művelet nem sikerült az újrapróbálkozások után.")
 
-    def list_folder(self, path):
+    def list_for_deletion(self,path):
+        return self.list_folder(path,additional=["real_path","size","time"])
+
+    def list_folder(self, path, additional=None):
         entries = []
         seen = set()
         offset = 0
         while True:
             self._check_cancelled()
-            kwargs = {"additional": '["real_path","size","owner","time","perm"]' if path else '["real_path","owner","time","perm"]', "offset": offset, "limit": 500}
+            kwargs = {"additional": json.dumps(["size","time"] if additional is None else additional), "offset": offset, "limit": 500}
             if path:
                 kwargs["folder_path"] = path
             data = self.api_get("SYNO.FileStation.List", self.list_version,
@@ -363,6 +432,19 @@ class RemoteNASClient:
             if not batch or (total is not None and offset >= int(total)) or (total is None and len(batch) < 500):
                 return entries
 
+    def list_directories(self,path,offset=0,limit=200):
+        self._check_cancelled()
+        params={'offset':offset,'limit':limit,'sort_by':'name'}
+        if path:params.update(folder_path=path,filetype='dir')
+        else:params['onlywritable']='true'
+        data=self.api_get('SYNO.FileStation.List',self.list_version,'list' if path else 'list_share',**params)
+        rows=data.get('files' if path else 'shares')
+        if not isinstance(rows,list) or any(not isinstance(row,dict) or not isinstance(row.get('name'),str) for row in rows):raise RuntimeError('A NAS mappalistája nem értelmezhető.')
+        total=data.get('total')
+        if not rows and total is not None and offset<int(total):raise RuntimeError('A NAS hiányos mappalistát adott.')
+        return {'entries':rows,'more':offset+len(rows)<int(total) if total is not None else len(rows)==limit}
+
+    @timed("NAS", "open_stream")
     def open_stream(self, path, headers=None):
         # Network waits and retry delays must not hold the session-state lock.
         for attempt in range(3):
@@ -500,8 +582,13 @@ class RemoteNASClient:
                 raise RuntimeError(f"A NAS nem tudta elmenteni a párosítást (DSM: {code}).")
 
     def close(self):
-        if self.sid and self.auth_url:
-            try: self._get(self.auth_url, params={"api":"SYNO.API.Auth","version":self.auth_version,"method":"logout","session":self.session_name,"_sid":self.sid}, timeout=(2,3))
-            except requests.RequestException: pass
-        self.session.close()
-
+        try:
+            if self.sid and self.auth_url:
+                try:
+                    response=self._get(self.auth_url,params={'api':'SYNO.API.Auth','version':self.auth_version,'method':'logout','session':self.session_name,'_sid':self.sid},timeout=(2,3))
+                    response.close()
+                except (requests.RequestException,RuntimeError):pass
+        finally:
+            self.session.close()
+            for transport in getattr(self,'_http_all',()):transport.close()
+            self._http_all=set();self._http_idle=[]

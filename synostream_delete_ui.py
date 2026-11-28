@@ -38,7 +38,7 @@ class DeleteMediaDialog(QDialog):
     def prepare(self):
         def work(stop):
             with contextlib.closing(self.client_factory(stop)) as client:
-                return Inventory(self.seeds,self.roots,self.movie,client.list_folder,self.protected)
+                return Inventory(self.seeds,self.roots,self.movie,getattr(client,"list_for_deletion",client.list_folder),self.protected)
         def ready(inventory):
             if self.result()==QDialog.DialogCode.Rejected and not self.isVisible():return
             self.inventory=inventory
@@ -73,7 +73,7 @@ class DeleteMediaDialog(QDialog):
         plan=self.plan;inventory=self.inventory
         def work(stop):
             with contextlib.closing(self.client_factory(stop)) as client:
-                inventory.list_folder=client.list_folder
+                inventory.list_folder=getattr(client,"list_for_deletion",client.list_folder)
                 return inventory.execute(plan,client.delete_paths)
         def done(result):
             self.writing=False

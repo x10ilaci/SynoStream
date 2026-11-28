@@ -52,7 +52,7 @@ $originalPath = $env:PATH
 $sourceFiles = @(
     ".gitignore", "BINARY_NOTICES.md", "build_windows.ps1", "LICENSE", "README.md", "release_tools.py", "release_version.txt", "release_guard.py", "publish_release.py", "synostream_updates.py", "synostream_update_ui.py",
     "requirements-build.txt", "requirements-dev.txt", "requirements.txt",
-    "${appName}.py", "synostream_logic.py", "synostream_nfo.py", "synostream_pairings.py", "synostream_nas.py", "synostream_mpv_install.py", "synostream_storage.py",
+    "${appName}.py", "synostream_logic.py", "synostream_nfo.py", "synostream_pairings.py", "synostream_nas.py", "synostream_diagnostics.py", "synostream_sessions.py", "synostream_mpv_install.py", "synostream_storage.py",
     "synostream_deletion.py", "synostream_delete_ui.py", "synostream_connections.py", "synostream_sources.py", "synostream_source_migration.py", "synostream_source_ui.py", "synostream_source_folders.py", "synostream_recommendations.py", "synostream_recommendation_ui.py", "synostream_library.py", "synostream_playback.py", "synostream_performance.py", "synostream_downloads.py", "synostream_download_ui.py", "synostream_torrent_selection.py", "synostream_file_selection_ui.py", "synostream_window_chrome.py", "synostream_window_identity.py", "CHANGELOG_$version.md", "JAVITASOK_ES_ELLENORZES.md", "KIVETELEK_ATVIZSGALASA.md", "TESTING.md", "THIRD_PARTY_NOTICES.md"
 )
 $licensesDir = Join-Path $sourceDir "release_assets\licenses"

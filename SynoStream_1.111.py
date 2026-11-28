@@ -1,7 +1,7 @@
 # SynoStream is a Windows media-library and playback application.
 # Copyright (C) 2026 Lőrincz László
 # SPDX-License-Identifier: GPL-3.0-only
-# Modified version: SynoStream 1.110, 2026-11-11.
+# Modified version: SynoStream 1.111, 2026-11-11.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -68,8 +68,16 @@ from synostream_library import CardRecord, visible_range
 from synostream_storage import data_directory, backup_before_upgrade, commit_data_version, migrate_schema, settings_transaction, recover_settings_transaction, acquire_application_lock, DataDirectoryInUse
 
 
+from synostream_sessions import pool as nas_session_pool
+from synostream_diagnostics import timed, summary as diagnostic_summary
+
 def RemoteNASClient(credentials=None, should_stop=None, extra_apis=()):
-    factory = lambda: _RemoteNASClient(config if credentials is None else credentials, should_stop, extra_apis=extra_apis)
+    values=dict(config if credentials is None else credentials)
+    # Interactive OTP/token setup and write-specific clients retain exclusive ownership.
+    def factory():
+        if extra_apis or "remember_device" in values or values.get("otp_code"):return _RemoteNASClient(values,should_stop,extra_apis=extra_apis)
+        selected={key:values.get(key,'') for key in ('nas_local_url','nas_direct_url','quickconnect_id','nas_username','nas_password','nas_device_tokens')}
+        return nas_session_pool.acquire(selected,should_stop,lambda stop:_RemoteNASClient(selected,stop))
     router = source_router()
     return RoutedNASClient(router, factory) if router.pairs else factory()
 
@@ -1229,9 +1237,9 @@ except DataDirectoryInUse:
 recover_settings_transaction(BASE_DIR)
 if __name__ == '__main__' and '--smoke-test' not in sys.argv and '--updated-from' not in sys.argv:
     from synostream_updates import launch_pending_update
-    if launch_pending_update('1.110', sys.executable, BASE_DIR):
+    if launch_pending_update('1.111', sys.executable, BASE_DIR):
         raise SystemExit(0)
-backup_before_upgrade(BASE_DIR, "1.110")
+backup_before_upgrade(BASE_DIR, "1.111")
 if os.path.isfile(os.path.join(BASE_DIR, "media_library.db")):
     with contextlib.closing(sqlite3.connect(os.path.join(BASE_DIR, "media_library.db"))) as _preflight:
         if _preflight.execute("PRAGMA user_version").fetchone()[0] > 1:
@@ -1269,7 +1277,7 @@ CARD_SIZE_PRESETS = {
 }
 
 # Minden további alkalmazásmódosításnál a verzió tizedes utáni száma növekszik.
-APP_VERSION = "1.110"
+APP_VERSION = "1.111"
 MAX_POSTER_CACHE_BYTES = 512 * 1024 * 1024
 BACKUP_FORMAT_VERSION = 1
 POSTER_CACHE_LOCK = threading.RLock()
@@ -2436,6 +2444,7 @@ def get_api_key():
     return key
 
 
+@timed("TMDB","request")
 def tmdb_request(path, params):
     """JSON-t ad vissza, 404 esetén None-t; hiba esetén TmdbError."""
     key = get_api_key()
@@ -3983,9 +3992,31 @@ class RemoteQuickConnectDialog(QDialog):
 
     def _nas_failure(self, message):
         if message.startswith('Kétlépcsős kód szükséges:'):
+            self._forget_rejected_device()
             self._otp_requested = True
         else:
             QMessageBox.warning(self, 'NAS-kapcsolat', message)
+
+    def _forget_rejected_device(self):
+        credentials = getattr(self, '_login_attempt_credentials', None)
+        if not credentials:
+            return
+        rejected = trusted_device_id(credentials)
+        if not rejected:
+            return
+        try:
+            devices = json.loads(config.get('nas_device_tokens') or '{}')
+        except (TypeError, ValueError):
+            return
+        key = nas_device_key(credentials)
+        # A different dialog may already have saved a replacement token.
+        if not isinstance(devices, dict) or devices.get(key) != rejected:
+            return
+        devices.pop(key)
+        config['nas_device_tokens'] = json.dumps(devices)
+        ok, error = save_config()
+        if not ok:
+            QMessageBox.warning(self, "Mentési figyelmeztetés", redact_credentials(error))
 
     def _request_otp(self):
         code, accepted = QInputDialog.getText(self, 'Kétlépcsős azonosítás', 'A NAS egyszer használatos kódja:')
@@ -4018,6 +4049,8 @@ class RemoteQuickConnectDialog(QDialog):
                 self.load_folder("")
 
     def connect_nas(self):
+        if self._nas_task is not None:
+            return
         credentials = dict(nas_local_url=self.local_edit.text().strip(), nas_direct_url=self.direct_edit.text().strip(), quickconnect_id=self.id_edit.text().strip(),
                            nas_username=self.user_edit.text().strip(),
                            nas_password=self.pass_edit.text() or config.get("nas_password", ""))
@@ -4037,6 +4070,7 @@ class RemoteQuickConnectDialog(QDialog):
         client_credentials = dict(credentials, nas_device_tokens=config.get("nas_device_tokens", ""),
                                   use_device_token=self.remember_device.isChecked(), remember_device=self.remember_device.isChecked(),
                                   **({"otp_code":otp} if otp else {}))
+        self._login_attempt_credentials = dict(client_credentials)
         def connected(client):
             self.session.close()
             self._nas_client = client
@@ -5785,6 +5819,17 @@ class LibraryScannerThread(QThread):
                 group["added_at"] = max(group["added_at"], entry_mtime)
             else:
                 ordinary.append((entry, path, entry_mtime))
+        if remote:
+            from concurrent.futures import ThreadPoolExecutor
+            def prefetch_show(row):
+                if self.isInterruptionRequested():raise InterruptedError('Megszakítva')
+                entry,path,mtime=row
+                return normalize_media_path(path),self.remote_client.list_folder(remote_real_path(path))
+            with ThreadPoolExecutor(max_workers=4,thread_name_prefix='NAS-show') as executor:
+                for future in [executor.submit(prefetch_show,row) for row in ordinary if self.force_remote_refresh or (normalize_media_path(row[1]),0) not in self.cached_media_rows or float(self.cached_media_rows[(normalize_media_path(row[1]),0)].get("file_mtime",0) or 0)!=float(row[2] or 0)]:
+                    try:key,rows=future.result();self._nfo_listings[key]=rows
+                    except InterruptedError:return
+                    except Exception:pass  # Normal recognition retries and reports a failed folder.
         for entry, path, entry_mtime in ordinary:
             name = entry.get("name", "") if remote else entry.name
             if remote:
@@ -5846,86 +5891,98 @@ class LibraryScannerThread(QThread):
                 self.add_error(f"A távoli TV műsorok mappa nem olvasható: {real_base} ({exc})")
             return
 
+        from concurrent.futures import ThreadPoolExecutor
+        from itertools import islice
         pending = deque([(real_base, 0.0)])
-        visited_directories = set()
-        while pending:
-            if self.isInterruptionRequested():
-                return
-            current, current_mtime = pending.popleft()
-            normalized_current = normalize_media_path(REMOTE_PREFIX + current)
-            if normalized_current in visited_directories:
-                continue
-            visited_directories.add(normalized_current)
-            if current != real_base and self._try_skip_unchanged_remote_leaf(current, current_mtime):
-                continue
-            try:
-                entries = self.portable_remote_listing(current)
-            except Exception as exc:
-                self.add_error(f"A távoli mappa nem olvasható: {current} ({exc})")
-                continue
-            self._nfo_listings[normalize_media_path(REMOTE_PREFIX + current)] = entries
-            entries = [e for e in entries if not is_ignored(e.get("name", "")) and not media_is_excluded(REMOTE_PREFIX + (e.get("path") or current.rstrip("/") + "/" + e.get("name", "")), self.excluded_paths)]
-            samples = sample_names_in_listing(entries)
-            entries = [e for e in entries if e.get("isdir") or e.get("name", "") not in samples]
-            entries.sort(key=lambda e: (-float(((e.get("additional") or {}).get("time") or {}).get("mtime",0) or 0), natural_sort_key(e.get("name", ""))))
-            directories = [entry for entry in entries if entry.get("isdir")]
-            direct_videos = [
-                entry for entry in entries
-                if not entry.get("isdir")
-                and entry.get("name", "").lower().endswith(VIDEO_EXTENSIONS)
-            ]
-            self._record_directory_snapshot(current, current_mtime, bool(directories), len(direct_videos))
-            if self._is_numbered_show_folder(
-                current,
-                [entry.get("name", "") for entry in direct_videos],
-            ):
-                show_path = REMOTE_PREFIX + current
-                self.emit_numbered_show_folder(conn, show_path, remote=True)
-                self.detected_numbered_show_roots.add(
-                    (self.current_scan_library_id, normalize_media_path(show_path))
-                )
-                continue
-            for remote_entry in entries:
+        prefetched={}
+        executor=ThreadPoolExecutor(max_workers=4,thread_name_prefix="NAS-list")
+        try:
+            visited_directories = set()
+            while pending:
                 if self.isInterruptionRequested():
                     return
-                name = remote_entry.get("name", "")
-                if not name:
+                current, current_mtime = pending.popleft()
+                normalized_current = normalize_media_path(REMOTE_PREFIX + current)
+                if normalized_current in visited_directories:
                     continue
-                is_dir = bool(remote_entry.get("isdir"))
-                remote_path = remote_entry.get("path") or (current.rstrip("/") + "/" + name)
-                add_info = remote_entry.get("additional") or {}
-                time_info = add_info.get("time") or {}
-                mtime = float(time_info.get("mtime", 0) or 0)
-                if is_movie and is_dir and is_sample_path(remote_path,library_card_root(real_base,remote_path),directory=True):
+                visited_directories.add(normalized_current)
+                if current != real_base and self._try_skip_unchanged_remote_leaf(current, current_mtime):
                     continue
-                if is_movie and is_dir:
-                    pending.append((remote_path, mtime))
-                    continue
-                if is_movie:
-                    if is_dir or not name.lower().endswith(VIDEO_EXTENSIONS):
-                        continue
-                    wanted_movie = True
-                else:
-                    # A TV műsorok gyökérmappájának közvetlen almappái jelenjenek meg a listában.
-                    if current != real_base or not is_dir:
-                        continue
-                    wanted_movie = False
-                path = REMOTE_PREFIX + remote_path
-                cached = self.cached_media_rows.get((normalize_media_path(path), 1))
-                if (wanted_movie and self._cached_row_is_current(
-                        path, name, True, cached, file_mtime=mtime)):
-                    self.emit_cached_media_row(cached, True, mtime)
-                    continue
-                entry = SimpleNamespace(path=path, name=name, stat=lambda mt=mtime: SimpleNamespace(st_mtime=mt))
                 try:
-                    item = self.process_media_item(entry, wanted_movie, conn)
-                except sqlite3.Error as exc:
-                    with contextlib.suppress(sqlite3.Error):
-                        conn.rollback()
-                    self.add_error(f"Adatbázis hiba ({name}): {exc}")
-                    item = self.make_item(path, name, "")
-                item["added_at"] = mtime
-                self.emit_item(item, wanted_movie)
+                    for candidate,mtime in [(current,current_mtime)]+list(islice(pending,3)):
+                        if candidate in prefetched:continue
+                        if candidate!=current and self._snapshot_for_directory(candidate):continue
+                        prefetched[candidate]=executor.submit(self.portable_remote_listing,candidate)
+                    entries = prefetched.pop(current).result()
+                except Exception as exc:
+                    self.add_error(f"A távoli mappa nem olvasható: {current} ({exc})")
+                    continue
+                self._nfo_listings[normalize_media_path(REMOTE_PREFIX + current)] = entries
+                entries = [e for e in entries if not is_ignored(e.get("name", "")) and not media_is_excluded(REMOTE_PREFIX + (e.get("path") or current.rstrip("/") + "/" + e.get("name", "")), self.excluded_paths)]
+                samples = sample_names_in_listing(entries)
+                entries = [e for e in entries if e.get("isdir") or e.get("name", "") not in samples]
+                entries.sort(key=lambda e: (-float(((e.get("additional") or {}).get("time") or {}).get("mtime",0) or 0), natural_sort_key(e.get("name", ""))))
+                directories = [entry for entry in entries if entry.get("isdir")]
+                direct_videos = [
+                    entry for entry in entries
+                    if not entry.get("isdir")
+                    and entry.get("name", "").lower().endswith(VIDEO_EXTENSIONS)
+                ]
+                self._record_directory_snapshot(current, current_mtime, bool(directories), len(direct_videos))
+                if self._is_numbered_show_folder(
+                    current,
+                    [entry.get("name", "") for entry in direct_videos],
+                ):
+                    show_path = REMOTE_PREFIX + current
+                    self.emit_numbered_show_folder(conn, show_path, remote=True)
+                    self.detected_numbered_show_roots.add(
+                        (self.current_scan_library_id, normalize_media_path(show_path))
+                    )
+                    continue
+                for remote_entry in entries:
+                    if self.isInterruptionRequested():
+                        return
+                    name = remote_entry.get("name", "")
+                    if not name:
+                        continue
+                    is_dir = bool(remote_entry.get("isdir"))
+                    remote_path = remote_entry.get("path") or (current.rstrip("/") + "/" + name)
+                    add_info = remote_entry.get("additional") or {}
+                    time_info = add_info.get("time") or {}
+                    mtime = float(time_info.get("mtime", 0) or 0)
+                    if is_movie and is_dir and is_sample_path(remote_path,library_card_root(real_base,remote_path),directory=True):
+                        continue
+                    if is_movie and is_dir:
+                        pending.append((remote_path, mtime))
+                        continue
+                    if is_movie:
+                        if is_dir or not name.lower().endswith(VIDEO_EXTENSIONS):
+                            continue
+                        wanted_movie = True
+                    else:
+                        # A TV műsorok gyökérmappájának közvetlen almappái jelenjenek meg a listában.
+                        if current != real_base or not is_dir:
+                            continue
+                        wanted_movie = False
+                    path = REMOTE_PREFIX + remote_path
+                    cached = self.cached_media_rows.get((normalize_media_path(path), 1))
+                    if (wanted_movie and self._cached_row_is_current(
+                            path, name, True, cached, file_mtime=mtime)):
+                        self.emit_cached_media_row(cached, True, mtime)
+                        continue
+                    entry = SimpleNamespace(path=path, name=name, stat=lambda mt=mtime: SimpleNamespace(st_mtime=mt))
+                    try:
+                        item = self.process_media_item(entry, wanted_movie, conn)
+                    except sqlite3.Error as exc:
+                        with contextlib.suppress(sqlite3.Error):
+                            conn.rollback()
+                        self.add_error(f"Adatbázis hiba ({name}): {exc}")
+                        item = self.make_item(path, name, "")
+                    item["added_at"] = mtime
+                    self.emit_item(item, wanted_movie)
+        finally:
+            executor.shutdown(wait=True,cancel_futures=True)
+            diagnostic_summary()
 
     def emit_item(self, item, is_movie):
         if self._discovering:
@@ -6020,6 +6077,7 @@ class LibraryScannerThread(QThread):
             LOGGER.debug("A film mappanév-környezete nem olvasható: %s", full_path, exc_info=True)
             return movie_search_context(filename)
 
+    @timed("NFO","read")
     def read_nfo_hint(self, full_path, name, is_movie):
         """Read only a confidently associated sidecar, with bounded NAS/local IO."""
         if is_movie and is_sample_video(name):
@@ -11168,6 +11226,7 @@ def main():
     if smoke_test and not os.environ.get("SYNOSTREAM_DATA_DIR"):
         return 2  # Automated smoke checks must explicitly choose an isolated data directory.
     app = QApplication(sys.argv)
+    app.aboutToQuit.connect(nas_session_pool.close)
     if os.path.isfile(APP_ICON_FILE):
         app.setWindowIcon(app._synostream_application_icon)
     app.setStyleSheet(DS_VIDEO_PURPLE_FIXED_QSS)
